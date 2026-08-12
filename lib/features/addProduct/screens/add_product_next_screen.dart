@@ -62,7 +62,6 @@ class AddProductNextScreen extends StatefulWidget {
 class AddProductNextScreenState extends State<AddProductNextScreen> with AutomaticKeepAliveClientMixin {
   bool isSelected = false;
   final FocusNode _discountNode = FocusNode();
-  final FocusNode _shippingCostNode = FocusNode();
   final FocusNode _unitPriceNode = FocusNode();
   final FocusNode _totalQuantityNode = FocusNode();
   final FocusNode _minimumOrderQuantityNode = FocusNode();
@@ -116,7 +115,8 @@ class AddProductNextScreenState extends State<AddProductNextScreen> with Automat
       resProvider.unitPriceController.text = PriceConverter.convertPriceWithoutSymbol(context, _product!.unitPrice);
       _taxController.text = _product!.tax.toString();
       Provider.of<VariationController>(context, listen: false).setCurrentStock(_product!.currentStock.toString());
-      resProvider.shippingCostController.text = PriceConverter.convertPriceWithoutSymbol(context, _product!.shippingCost);
+      // Admin three-step shipping replaces the legacy per-product shipping amount.
+      resProvider.shippingCostController.text = '0';
       resProvider.minimumOrderQuantityController.text = _product!.minimumOrderQty.toString();
       Provider.of<AddProductController>(context, listen: false).setDiscountTypeIndex(_product!.discountType == 'percent' ? 0 : 1, false);
       _discountController.text = _product!.discountType == 'percent' ?
@@ -190,7 +190,8 @@ class AddProductNextScreenState extends State<AddProductNextScreen> with Automat
     String currentStock = Provider.of<VariationController>(context,listen: false).totalQuantityController.text.trim();
     List<int?> taxIds = Provider.of<AddProductTaxController>(Get.context!, listen: false).selectedTaxList.map((tax) => tax.id).toList();
     String discount = _discountController.text.trim();
-    String shipping = resProvider.shippingCostController.text.trim();
+    // Keep legacy form data neutral; server-side checkout calculates the real shipping price.
+    String shipping = '0';
 
 
     return ProductCombinedData(
@@ -429,7 +430,7 @@ class AddProductNextScreenState extends State<AddProductNextScreen> with Automat
                                                 ProductDiscountTextFieldWidget(
                                                   formProduct: true,
                                                   focusNode: _discountNode,
-                                                  nextNode: _shippingCostNode,
+                                                  nextNode: _totalQuantityNode,
                                                   border: true,
                                                   borderColor: Theme.of(context).primaryColor.withValues(alpha: .25),
                                                   focusBorder: true,
@@ -485,54 +486,7 @@ class AddProductNextScreenState extends State<AddProductNextScreen> with Automat
                                                 ),
 
 
-                                                resProvider.productTypeIndex == 0 ?
-                                                const SizedBox(height: Dimensions.paddingSizeLarge) :
-                                                const SizedBox(height: Dimensions.paddingSizeLarge),
-
-                                                if(resProvider.productTypeIndex == 0)
-                                                CustomTextFieldWidget(
-                                                  border: true,
-                                                  controller: resProvider.shippingCostController,
-                                                  focusNode: _shippingCostNode,
-                                                  nextNode: _totalQuantityNode,
-                                                  textInputAction: TextInputAction.next,
-                                                  textInputType: TextInputType.number,
-                                                  isAmount: true,
-                                                  hintText: getTranslated('shipping_cost', context)!,
-                                                  formProduct: true,
-                                                ),
-
-                                                if(resProvider.productTypeIndex == 0)
-                                                  const SizedBox(height: Dimensions.paddingSizeLarge),
-
-                                                if(resProvider.productTypeIndex == 0)
-                                                  DropdownDecoratorWidget(
-                                                  title: 'shipping_cost_multiply',
-                                                  isRequired: false,
-                                                  child: Column(
-                                                    children: [
-                                                      Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-                                                        Expanded(
-                                                          child: Padding(
-                                                            padding: EdgeInsets.symmetric(vertical: Dimensions.fontSizeDefault),
-                                                            child: Text(getTranslated('statuss', context)!,
-                                                              style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeDefault, color:  Theme.of(context).textTheme.bodyLarge!.color!),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        const SizedBox(width: Dimensions.paddingSizeSmall),
-
-                                                        FlutterSwitch(width: 35.0, height: 20.0, toggleSize: 20.0,
-                                                          value: resProvider.isMultiply,
-                                                          borderRadius: 20.0,
-                                                          activeColor: Theme.of(context).primaryColor,
-                                                          padding: 1.0,
-                                                          onToggle:(bool isActive) => resProvider.toggleMultiply(context),
-                                                        ),
-                                                      ]),
-                                                    ],
-                                                  ),
-                                                ),
+                                                // Shipping price and quantity rules are configured by admin at checkout.
 
                                               ],
                                             ),
@@ -1410,7 +1364,8 @@ class AddProductNextScreenState extends State<AddProductNextScreen> with Automat
                                               unitPrice: resProvider.unitPriceController.text.trim(),
                                               currentStock: variationController.totalQuantityController.text.trim(),
                                               orderQuantity: resProvider.minimumOrderQuantityController.text.trim(),
-                                              shippingCost: resProvider.shippingCostController.text.trim(),
+                                              // Do not submit a seller-defined shipping amount with the product.
+                                              shippingCost: '0',
                                               isUpdate: widget.product != null,
                                             );
 

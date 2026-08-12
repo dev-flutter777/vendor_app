@@ -53,7 +53,7 @@ class _AuctionWithdrawalBottomSheetState extends State<AuctionWithdrawalBottomSh
     }
 
     Future.wait([
-      walletController.getWithdrawMethods(context),
+      walletController.getWithdrawMethods(context, includeGlobalMethods: true),
       walletController.getPaymentInfoList(),
     ]).then((_) {
       auctionController.selectWithdrawMethodById(walletController, widget.initialMethodId, initialFieldValues: widget.initialMethodFields);

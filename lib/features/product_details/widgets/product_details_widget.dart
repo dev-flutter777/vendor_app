@@ -175,11 +175,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
                             isPercentage: false,
                           ),
 
-                          widget.productModel!.productType == 'physical'?
-                          _InformationElementWidget(
-                            labelText: getTranslated('shipping_cost', context)!,
-                            infoText:  PriceConverter.convertPrice(context,  double.tryParse(widget.productModel?.shippingCost.toString() ?? '') ?? 0)  ,
-                          ) : const SizedBox(),
+                          // Checkout shows the admin-selected delivery price; it is not a product attribute.
 
                           if ((widget.productModel?.discount ?? 0) > 0 || (widget.productModel?.clearanceSale?.discountAmount ?? 0) > 0)
                           isClearanceSaleActive ?
@@ -1326,7 +1322,6 @@ class DiscountTagWidget extends StatelessWidget {
     );
   }
 }
-
 
 
 

@@ -19,6 +19,16 @@ abstract class AuthRepositoryInterface implements RepositoryInterface{
   String getUserPassword();
   Future<bool> clearUserNumberAndPassword();
   Future<ApiResponse> registration(XFile? profileImage, XFile? shopLogo, XFile? shopBanner, XFile? secondaryBanner, RegisterModel registerModel, XFile? tinCertificate);
+  Future<ApiResponse> requiredRegistrationPolicies();
+  Future<ApiResponse> acceptRegistrationPolicies(String registrationReference, List<int> policyVersionIds);
+  Future<ApiResponse> sendRegistrationOtp(String registrationReference);
+  Future<ApiResponse> verifyRegistrationOtp(String registrationReference, String otp);
+  Future<void> saveRegistrationReference(String value);
+  String getRegistrationReference();
+  Future<ApiResponse> activationStatus(String registrationReference);
+  Future<ApiResponse> openActivationTicket(String registrationReference);
+  Future<ApiResponse> activationTicketMessages(String registrationReference, {int? ticketId});
+  Future<ApiResponse> sendActivationTicketMessage(String registrationReference, String body, {int? ticketId});
   Future<ApiResponse> firebaseAuthTokenStore(String userInput, String token);
   Future<ApiResponse> firebaseAuthVerify({required String phoneNumber, required String session, required String otp, required bool isForgetPassword});
   Future<ApiResponse> checkVendorExistPhone({required String phoneNumber});

@@ -31,7 +31,7 @@ class AddPaymentInfoScreen extends StatefulWidget {
 }
 
 class _AddPaymentInfoScreenState extends State<AddPaymentInfoScreen> {
-  String countryDialCode = '+880';
+  String countryDialCode = '+20';
 
   final TextEditingController _methodNameController = TextEditingController();
 
@@ -177,7 +177,7 @@ class _AddPaymentInfoScreenState extends State<AddPaymentInfoScreen> {
                                 itemCount: shopInfo.paymentMethodFields.length,
                                 itemBuilder: (context, index){
                                   if(!widget.formUpdate && shopInfo.paymentMethodFields[index].inputType == 'phone' && shopInfo.paymentMethodFields[index].countryCode == null) {
-                                    shopInfo.setMethodCountryCode(index, CountryCode.fromCountryCode(Provider.of<SplashController>(context, listen: false).configModel!.countryCode!).dialCode ?? '+880');
+                                    shopInfo.setMethodCountryCode(index, '+20');
                                   }
                                   return shopInfo.paymentMethodFields[index].inputType != 'date' ?  CustomTextFieldWidget(
                                     formProduct: true,
@@ -185,7 +185,7 @@ class _AddPaymentInfoScreenState extends State<AddPaymentInfoScreen> {
                                     border: true,
                                     controller: shopInfo.paymentMethodFields[index].textEditingController,
                                     isPhoneNumber: shopInfo.paymentMethodFields[index].inputType == 'phone',
-                                    countryDialCode: CountryCode.fromCountryCode(Provider.of<SplashController>(context, listen: false).configModel!.countryCode!).dialCode ?? '+880',
+                                    countryDialCode: '+20',
                                     hintText: formatField(shopInfo.paymentMethodFields[index].inputName ?? ''),
                                     showCodePicker: shopInfo.paymentMethodFields[index].inputType == 'phone',
                                     onCountryChanged: (CountryCode countryCode) {

@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sixvalley_vendor_app/features/chat/screens/inbox_screen.dart';
 import 'package:sixvalley_vendor_app/features/maintenance/maintenance_screen.dart';
 import 'package:sixvalley_vendor_app/features/notification/screens/notification_screen.dart';
 import 'package:sixvalley_vendor_app/features/order_details/screens/order_details_screen.dart';
@@ -11,7 +10,6 @@ import 'package:sixvalley_vendor_app/features/refund/domain/models/refund_model.
 import 'package:sixvalley_vendor_app/features/refund/screens/refund_details_screen.dart';
 import 'package:sixvalley_vendor_app/features/splash/domain/models/config_model.dart';
 import 'package:sixvalley_vendor_app/features/update/screen/update_screen.dart';
-import 'package:sixvalley_vendor_app/features/wallet/screens/wallet_screen.dart';
 import 'package:sixvalley_vendor_app/helper/network_info.dart';
 import 'package:sixvalley_vendor_app/features/auth/controllers/auth_controller.dart';
 import 'package:sixvalley_vendor_app/features/splash/controllers/splash_controller.dart';
@@ -71,8 +69,11 @@ class SplashScreenState extends State<SplashScreen> {
               String notificationType = widget.body?.type??"";
 
               switch(notificationType.toLowerCase()) {
-                case 'chatting' : {
-                  Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(builder: (context) => InboxScreen(fromNotification: true, initIndex: widget.body?.messageKey ==  'message_from_delivery_man' ? 1 : 0)));
+                case 'chatting' :
+                case 'wallet' :
+                case 'wallet_withdraw' : {
+                  // Inbox and earnings pages are hidden from vendors; keep notifications reachable.
+                  Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(builder: (context) => const NotificationScreen()));
                 }
                 break;
 
@@ -83,16 +84,6 @@ class SplashScreenState extends State<SplashScreen> {
 
                 case 'order' : {
                   Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(builder: (context) => OrderDetailsScreen(orderId: int.parse(widget.body!.orderId.toString()), fromNotification: true)));
-                }
-                break;
-
-                case 'wallet' : {
-                  Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(builder: (context) => const WalletScreen(fromNotification: true)));
-                }
-                break;
-
-                case 'wallet_withdraw' : {
-                  Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(builder: (context) => const WalletScreen(fromNotification: true)));
                 }
                 break;
 

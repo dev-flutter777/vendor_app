@@ -785,6 +785,16 @@ class AddProductSeoScreenState extends State<AddProductSeoScreen>  with Automati
                                             _product!.discountType = resProvider.discountType;
                                             _product!.digitalProductType = Provider.of<DigitalProductController>(Get.context!,listen: false).digitalProductTypeIndex == 0 ? 'ready_after_sell' : 'ready_product';
                                             _product!.digitalFileReady = digitalProductController.digitalProductFileName;
+                                            _product!.saleUnitType = resProvider.saleUnitType;
+                                            _product!.piecesPerUnit = int.tryParse(resProvider.piecesPerUnitController.text.trim());
+                                            _product!.length = double.tryParse(resProvider.lengthController.text.trim());
+                                            _product!.width = double.tryParse(resProvider.widthController.text.trim());
+                                            _product!.height = double.tryParse(resProvider.heightController.text.trim());
+                                            _product!.dimensionUnit = resProvider.dimensionUnit;
+                                            _product!.weight = double.tryParse(resProvider.weightController.text.trim());
+                                            _product!.weightUnit = resProvider.weightUnit;
+                                            _product!.productionDate = resProvider.productionDateController.text.trim();
+                                            _product!.expiryDate = resProvider.expiryDateController.text.trim();
                                             _product!.categoryIds = [];
                                             _product!.categoryIds!.add(CategoryIds(id: widget.categoryId));
 

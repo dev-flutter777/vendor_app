@@ -12,6 +12,7 @@ abstract class ProductServiceInterface {
   Future<dynamic> getStockLimitStatus();
   Future<dynamic> getSearchedPosProductList(String search, List <String> ids);
   Future<dynamic> getStockLimitedProductList(int offset, String languageCode );
+  Future<dynamic> getStockViolations(String languageCode);
   Future<dynamic> getMostPopularProductList(int offset, String languageCode );
   Future<dynamic> getTopSellingProductList(int offset, String languageCode );
   Future<dynamic> deleteProduct(int? productID);

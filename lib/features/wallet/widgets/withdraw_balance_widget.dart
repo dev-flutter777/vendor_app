@@ -48,8 +48,9 @@ class _WithdrawBalanceWidgetState extends State<WithdrawBalanceWidget> {
           ),
         ),
 
-        Consumer<ProfileController>(
-            builder: (context, seller, child) {
+        Consumer2<ProfileController, WalletController>(
+            builder: (context, seller, wallet, child) {
+              final available = wallet.availableBalance;
               return Container(
                 width: widthSize,
                 padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault, vertical: Dimensions.paddingSizeDefault),
@@ -69,8 +70,7 @@ class _WithdrawBalanceWidgetState extends State<WithdrawBalanceWidget> {
                       )),
                       const SizedBox(height: Dimensions.paddingSizeExtraSmall),
 
-                      Text(PriceConverter.convertPrice(context, seller.userInfoModel!.wallet != null ?
-                      seller.userInfoModel!.wallet!.totalEarning ?? 0 : 0), style: robotoMedium.copyWith(
+                      Text(PriceConverter.convertPrice(context, available), style: robotoMedium.copyWith(
                         fontSize: Dimensions.fontSizeMaxLarge,
                         color: Theme.of(context).cardColor,
                       )),
@@ -83,8 +83,7 @@ class _WithdrawBalanceWidgetState extends State<WithdrawBalanceWidget> {
                       onTap: () => showModalBottomSheet(
                           backgroundColor: Colors.transparent,
                           isScrollControlled: true,
-                          context: context, builder: (_) => CustomEditDialogWidget(totalEarning: seller.userInfoModel!.wallet != null
-                          ? seller.userInfoModel!.wallet!.totalEarning ?? 0 : 0,
+                          context: context, builder: (_) => CustomEditDialogWidget(totalEarning: available,
                       )),
                       child: Container(height: 40, width: widthSize * 0.2,
                         padding: const EdgeInsets.all(Dimensions.paddingSizeExtraSmall),

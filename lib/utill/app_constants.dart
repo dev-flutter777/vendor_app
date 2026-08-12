@@ -10,13 +10,19 @@ class AppConstants {
   static const int imageQuality = 100;
 
 
-  static const String baseUrl = 'YOUR_BASE_URL_HERE';
+  static const String baseUrl = String.fromEnvironment(
+    'BASE_URL',
+    defaultValue: 'http://10.0.2.2/ba/public',
+  );
 
   static const String loginUri = '/api/v3/seller/auth/login';
   static const String configUri = '/api/v1/config';
   static const String sellerUri = '/api/v3/seller/seller-info';
   static const String sellerAndBankUpdate = '/api/v3/seller/seller-update';
   static const String shopUri = '/api/v3/seller/shop-info';
+  static const String sellerBalanceUri = '/api/v3/seller/balance';
+  static const String sellerBalancePayUri = '/api/v3/seller/balance/pay';
+  static const String sellerBalanceOfflinePaymentUri = '/api/v3/seller/balance/offline-payment';
 
   static const String shopUpdate = '/api/v3/seller/shop-update';
   static const String cartUri = '/api/v3/seller/messages/list/';
@@ -26,6 +32,7 @@ class AppConstants {
   static const String seenMessageUri = '/api/v3/seller/messages/seen/';
   static const String orderListUri = '/api/v3/seller/orders/list';
   static const String orderDetails = '/api/v3/seller/orders/';
+  static const String sellerOrderInsuranceSuffix = '/insurance';
   static const String updateOrderStatus = '/api/v3/seller/orders/order-detail-status/';
   static const String balanceWithdraw = '/api/v3/seller/balance-withdraw';
   static const String balanceWithdrawUpdate = '/api/v3/seller/balance-withdraw-update';
@@ -33,6 +40,7 @@ class AppConstants {
   static const String transactionUri = '/api/v3/seller/transactions?status=';
   static const String sellerProductUri = '/api/v3/seller/products/';
   static const String stockOutProductUri = '/api/v3/seller/products/stock-out-list?limit=10&offset=';
+  static const String stockViolationsUri = '/api/v3/seller/products/stock-violations?limit=50&offset=1';
   static const String productReviewUri = '/api/v3/seller/shop-product-reviews';
   static const String productReviewStatusOnOff = '/api/v3/seller/shop-product-reviews-status';
   static const String attributeUri = '/api/v1/attributes';
@@ -69,6 +77,14 @@ class AppConstants {
   static const String digitalProductUpload = '/api/v3/seller/products/upload-digital-product';
   static const String digitalProductUploadAfterSell = '/api/v3/seller/orders/order-wise-product-upload';
   static const String registration = '/api/v3/seller/registration';
+  static const String registrationPoliciesUri = '/api/v3/seller/policies/required';
+  static const String registrationPolicyAcceptUri = '/api/v3/seller/policies/accept';
+  static const String registrationOtpSendUri = '/api/v3/seller/registration/send-otp';
+  static const String registrationOtpVerifyUri = '/api/v3/seller/registration/verify-otp';
+  static const String registrationActivationStatusUri = '/api/v3/seller/registration/activation-status';
+  static const String registrationActivationTicketUri = '/api/v3/seller/registration/activation-ticket';
+  static const String registrationActivationTicketMessagesUri = '/api/v3/seller/registration/activation-ticket/messages';
+  static const String registrationReference = 'seller_registration_reference';
   static const String deleteAccount = '/api/v3/seller/account-delete';
   static const String deliveryChargeForDelivery = '/api/v3/seller/orders/delivery-charge-date-update';
   static const String digitalAuthorList = '/api/v3/seller/products/digital-author-list';
@@ -118,6 +134,16 @@ class AppConstants {
   static const String couponStatusUpdate = '/api/v3/seller/coupon/status-update/';
   static const String deliveryManCollectedCashList = '/api/v3/seller/delivery-man/collect-cash-list/';
   static const String couponCustomerList = '/api/v3/seller/coupon/customers?name=';
+  // Seller package overview includes the active plan and available package plans.
+  static const String sellerPackagesUri = '/api/v3/seller/packages';
+  // Package payment endpoints are seller-only and keep offline requests pending for admin approval.
+  static const String sellerPackagePayUri = '/api/v3/seller/packages/pay';
+  static String sellerPackagePerformanceUri(int subscriptionId) => '/api/v3/seller/packages/$subscriptionId/performance';
+  static String sellerPackageCancelUri(int subscriptionId) => '/api/v3/seller/packages/$subscriptionId/cancel';
+  static const String sellerPackageOfflinePaymentUri = '/api/v3/seller/packages/offline-payment';
+  // Premium promotion quotas are validated by the seller package subscription on the backend.
+  static const String sellerSearchPromotionsUri = '/api/v3/seller/promotions/search';
+  static const String sellerHomepagePromotionsUri = '/api/v3/seller/promotions/homepage';
   static const String temporaryClose = '/api/v3/seller/temporary-close';
   static const String vacation = '/api/v3/seller/vacation-add';
   static const String dynamicWithdrawMethod = '/api/v3/seller/withdraw-method-list';

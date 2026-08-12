@@ -8,6 +8,7 @@ import 'package:sixvalley_vendor_app/utill/images.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_app_bar_widget.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_button_widget.dart';
 import 'package:sixvalley_vendor_app/features/order/widgets/location_search_dialog_widget.dart';
+import 'package:sixvalley_vendor_app/helper/egypt_location_helper.dart';
 
 class SelectLocationScreen extends StatefulWidget {
   final GoogleMapController? googleMapController;
@@ -31,8 +32,9 @@ class SelectLocationScreenState extends State<SelectLocationScreen> {
 
   @override
   void dispose() {
+    _controller?.dispose();
+    _locationController.dispose();
     super.dispose();
-    _controller!.dispose();
   }
 
   void _openSearchDialog(BuildContext context, GoogleMapController? mapController) async {
@@ -50,8 +52,10 @@ class SelectLocationScreenState extends State<SelectLocationScreen> {
           return Stack(
             clipBehavior: Clip.none, children: [
             GoogleMap(mapType: MapType.normal,
+              cameraTargetBounds: CameraTargetBounds(EgyptLocationHelper.bounds),
               initialCameraPosition: CameraPosition(
-                target: LatLng(locationProvider.position.latitude, locationProvider.position.longitude),
+                target: EgyptLocationHelper.normalize(LatLng(
+                  locationProvider.position.latitude, locationProvider.position.longitude)),
                 zoom: 16),
               zoomControlsEnabled: false,
               compassEnabled: false,
@@ -85,6 +89,16 @@ class SelectLocationScreenState extends State<SelectLocationScreen> {
                   child: Padding(padding: const EdgeInsets.all(Dimensions.paddingSizeLarge),
                     child: CustomButtonWidget(btnTxt: getTranslated('select_location', context),
                       onTap: () {
+                        final selected = LatLng(
+                          locationProvider.pickPosition.latitude,
+                          locationProvider.pickPosition.longitude,
+                        );
+                        if (!EgyptLocationHelper.contains(selected)) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text(getTranslated('select_address_inside_egypt', context) ?? ''),
+                          ));
+                          return;
+                        }
                         if(widget.googleMapController != null) {
                           widget.googleMapController!.moveCamera(CameraUpdate.newCameraPosition(CameraPosition(target: LatLng(
                             locationProvider.pickPosition.latitude, locationProvider.pickPosition.longitude,

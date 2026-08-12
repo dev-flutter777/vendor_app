@@ -28,6 +28,14 @@ class AuthController with ChangeNotifier {
   AuthController({required this.authServiceInterface});
   bool _isLoading = false;
   bool get isLoading => _isLoading;
+  List<Map<String, dynamic>> _requiredRegistrationPolicies = [];
+  List<Map<String, dynamic>> get requiredRegistrationPolicies => _requiredRegistrationPolicies;
+  bool _registrationPoliciesLoaded = false;
+  bool get registrationPoliciesLoaded => _registrationPoliciesLoaded;
+  Map<String, dynamic>? _activation;
+  Map<String, dynamic>? get activation => _activation;
+  bool _activationJustApproved = false;
+  bool get activationJustApproved => _activationJustApproved;
   final String _loginErrorMessage = '';
   String get loginErrorMessage => _loginErrorMessage;
   XFile? _sellerProfileImage;
@@ -56,7 +64,7 @@ class AuthController with ChangeNotifier {
   String get phone => _phone;
   bool _isPhoneNumberVerificationButtonLoading = false;
   bool get isPhoneNumberVerificationButtonLoading => _isPhoneNumberVerificationButtonLoading;
-  String? _countryDialCode = '+880';
+  String? _countryDialCode = '+20';
   String? get countryDialCode => _countryDialCode;
 
   bool _resendButtonLoading = false;
@@ -311,6 +319,60 @@ class AuthController with ChangeNotifier {
     _isLoading = false;
     notifyListeners();
     return response;
+  }
+
+  Future<void> loadRequiredRegistrationPolicies() async {
+    _registrationPoliciesLoaded = false;
+    notifyListeners();
+    final response = await authServiceInterface.requiredRegistrationPolicies() as ApiResponse;
+    if (response.response?.statusCode == 200 && response.response?.data is Map) {
+      final data = response.response!.data as Map;
+      _requiredRegistrationPolicies = List<Map<String, dynamic>>.from((data['policies'] ?? []).map((item) => Map<String, dynamic>.from(item)));
+      _registrationPoliciesLoaded = true;
+    }
+    notifyListeners();
+  }
+
+  Future<ApiResponse> acceptRegistrationPolicies(String registrationReference) async {
+    final ids = _requiredRegistrationPolicies.map((policy) => policy['id'] as int).toList();
+    return await authServiceInterface.acceptRegistrationPolicies(registrationReference, ids) as ApiResponse;
+  }
+
+  Future<ApiResponse> sendRegistrationOtp(String registrationReference) async {
+    return await authServiceInterface.sendRegistrationOtp(registrationReference) as ApiResponse;
+  }
+
+  Future<ApiResponse> verifyRegistrationOtp(String registrationReference, String otp) async {
+    return await authServiceInterface.verifyRegistrationOtp(registrationReference, otp) as ApiResponse;
+  }
+
+  Future<void> saveRegistrationReference(String value) async => authServiceInterface.saveRegistrationReference(value);
+  String getRegistrationReference() => authServiceInterface.getRegistrationReference();
+
+  Future<ApiResponse> loadActivationStatus() async {
+    final reference = getRegistrationReference();
+    if (reference.isEmpty) return ApiResponse.withError('registration_reference_missing');
+    final response = await authServiceInterface.activationStatus(reference) as ApiResponse;
+    if (response.response?.statusCode == 200 && response.response?.data is Map) {
+      final previousStatus = _activation?['status'];
+      _activation = Map<String, dynamic>.from((response.response!.data as Map)['activation'] ?? {});
+      _activationJustApproved = previousStatus != 'active' && _activation?['status'] == 'active';
+      notifyListeners();
+    }
+    return response;
+  }
+
+  Future<ApiResponse> openActivationTicket() async {
+    final response = await authServiceInterface.openActivationTicket(getRegistrationReference()) as ApiResponse;
+    await loadActivationStatus();
+    return response;
+  }
+
+  Future<ApiResponse> activationTicketMessages({int? ticketId}) async => await authServiceInterface.activationTicketMessages(getRegistrationReference(), ticketId: ticketId) as ApiResponse;
+  Future<ApiResponse> sendActivationTicketMessage(String body, {int? ticketId}) async => await authServiceInterface.sendActivationTicketMessage(getRegistrationReference(), body, ticketId: ticketId) as ApiResponse;
+  void dismissActivationApprovedBanner() {
+    _activationJustApproved = false;
+    notifyListeners();
   }
 
   void setCountryDialCode (String? setValue){

@@ -1,13 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sixvalley_vendor_app/localization/language_constrants.dart';
 import 'package:sixvalley_vendor_app/utill/dimensions.dart';
-import '../../../main.dart';
-
-List<Tab> _productTabs = <Tab>[
-  Tab(text: getTranslated('general_info', Get.context!) ?? 'General Info'),
-  Tab(text: getTranslated('variations', Get.context!) ?? 'Variations'),
-  Tab(text: getTranslated('seo', Get.context!) ??  'SEO'),
-];
 
 
 class AddProductTitleBar extends StatefulWidget {
@@ -29,6 +22,11 @@ class _AddProductTitleBarState extends State<AddProductTitleBar> with SingleTick
 
   @override
   Widget build(BuildContext context) {
+    final productTabs = <Tab>[
+      Tab(text: getTranslated('general_info', context) ?? 'General Info'),
+      Tab(text: getTranslated('variation_setup', context) ?? 'Variations'),
+      Tab(text: getTranslated('product_seo', context) ?? 'SEO'),
+    ];
 
     return SizedBox(
       height: 50,
@@ -37,7 +35,7 @@ class _AddProductTitleBarState extends State<AddProductTitleBar> with SingleTick
         child: TabBar(
           labelPadding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall),
           controller: widget.tabController,
-          tabs: _productTabs,
+          tabs: productTabs,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.grey,
           indicatorColor: Theme.of(context).primaryColor,

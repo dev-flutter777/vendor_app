@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_snackbar_widget.dart';
 import 'package:sixvalley_vendor_app/data/model/response/base/api_response.dart';
@@ -9,6 +10,7 @@ import 'package:sixvalley_vendor_app/features/shop/controllers/shop_controller.d
 import 'package:sixvalley_vendor_app/features/shop/domain/models/payment_information_model.dart';
 import 'package:sixvalley_vendor_app/features/transaction/controllers/transaction_controller.dart';
 import 'package:sixvalley_vendor_app/features/wallet/domain/services/wallet_service_interface.dart';
+import 'package:sixvalley_vendor_app/features/wallet/domain/models/seller_balance_model.dart';
 import 'package:sixvalley_vendor_app/helper/api_checker.dart';
 import 'package:sixvalley_vendor_app/localization/language_constrants.dart';
 import 'package:sixvalley_vendor_app/main.dart';
@@ -21,6 +23,54 @@ class WalletController with ChangeNotifier{
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
+  SellerBalanceModel? _sellerBalance;
+  SellerBalanceModel? get sellerBalance => _sellerBalance;
+  double get availableBalance => _sellerBalance?.summary['available'] ?? 0;
+
+  Future<void> getSellerBalance(BuildContext context) async {
+    final response = await walletServiceInterface.getSellerBalance(limit: 20);
+    if (response.response != null && response.response!.statusCode == 200) {
+      final body = response.response!.data;
+      if (body is Map) {
+        _sellerBalance = SellerBalanceModel.fromJson(Map<String, dynamic>.from(body));
+        notifyListeners();
+      }
+    }
+  }
+
+  bool _isFunding = false;
+  bool get isFunding => _isFunding;
+
+  Future<String?> payOperatingBalance({required String amount, required String paymentMethod}) async {
+    _isFunding = true;
+    notifyListeners();
+    final response = await walletServiceInterface.payOperatingBalance(amount: amount, paymentMethod: paymentMethod);
+    _isFunding = false;
+    if (response.response != null && response.response!.statusCode == 200) {
+      final data = response.response!.data;
+      await getSellerBalance(Get.context!);
+      notifyListeners();
+      return data is Map ? data['redirect_link']?.toString() : null;
+    }
+    ApiChecker.checkApi(response);
+    notifyListeners();
+    return null;
+  }
+
+  Future<bool> submitOfflineBalancePayment({required String amount, required int methodId, required Map<String, String> methodInformations, required XFile paymentProof, String? paymentNote}) async {
+    _isFunding = true;
+    notifyListeners();
+    final response = await walletServiceInterface.submitOfflineBalancePayment(amount: amount, methodId: methodId, methodInformations: methodInformations, paymentProof: paymentProof, paymentNote: paymentNote);
+    _isFunding = false;
+    if (response.response != null && response.response!.statusCode == 200) {
+      await getSellerBalance(Get.context!);
+      notifyListeners();
+      return true;
+    }
+    ApiChecker.checkApi(response);
+    notifyListeners();
+    return false;
+  }
 
   WithdrawModel? withdrawModel;
   List<WithdrawModel> methodList = [];
@@ -45,7 +95,7 @@ class WalletController with ChangeNotifier{
   List<TextEditingController> inputFieldControllerList = [];
   void getInputFieldList(){
     inputFieldControllerList = [];
-    if(methodList.isNotEmpty){
+    if(methodSelected?.methodFields != null){
       for(int i= 0; i< (methodSelected?.methodFields?.length ?? 0 ) ; i++){
         inputFieldControllerList.add(TextEditingController());
       }
@@ -59,7 +109,7 @@ class WalletController with ChangeNotifier{
     methodSelected = index;
 
     keyList = [];
-    if(methodList.isNotEmpty){
+    if(methodSelected?.methodFields != null){
       for(int i= 0; i< (methodSelected?.methodFields?.length ?? 0) ; i++){
         keyList.add(methodSelected?.methodFields![i].inputName);
       }
@@ -71,22 +121,35 @@ class WalletController with ChangeNotifier{
   }
 
 
-  Future<void> getWithdrawMethods(BuildContext context) async{
+  Future<void> getWithdrawMethods(BuildContext context, {bool includeGlobalMethods = false}) async{
     methodList = [];
     methodsIds = [];
-    ApiResponse response = await walletServiceInterface.getDynamicWithDrawMethod();
-      response.response!.data.forEach((method) => methodList.add(WithdrawModel.fromJson(method)));
-      getInputFieldList();
-      for(int index = 0; index < methodList.length; index++) {
-        methodsIds.add(
-          MethodModel(
-            id: methodList[index].id,
-            inputName: methodList[index].methodName,
+    await getPaymentInfoList();
+
+    // The regular seller wallet can request withdrawals only through a
+    // seller-owned destination that was approved and activated by the admin.
+    // The global method catalog is kept only for the legacy auction flow.
+    if (includeGlobalMethods) {
+      ApiResponse response = await walletServiceInterface.getDynamicWithDrawMethod();
+      final raw = response.response?.data;
+      final methods = raw is Map ? (raw['data'] as List? ?? const []) : (raw as List? ?? const []);
+      for (final method in methods) {
+        if (method is Map) {
+          final withdraw = WithdrawModel.fromJson(Map<String, dynamic>.from(method));
+          methodList.add(withdraw);
+          methodsIds.add(MethodModel(
+            id: withdraw.id,
+            inputName: withdraw.methodName,
             type: 'other',
-            methodFields: methodList[index].methodFields
-          )
-        );
+            methodFields: withdraw.methodFields,
+            isDefault: withdraw.isDefault,
+          ));
+        }
       }
+    }
+
+    setDefaultPaymentMethod();
+    getInputFieldList();
     notifyListeners();
   }
 
@@ -192,18 +255,25 @@ class WalletController with ChangeNotifier{
   Future<void> getPaymentInfoList() async {
     ApiResponse apiResponse = await walletServiceInterface.getPaymentInfoList();
     myMethodsIds = [];
+    methodSelected = null;
+    inputValueList = [];
+    keyList = [];
     if(apiResponse.response != null && apiResponse.response!.statusCode == 200) {
       _paymentInformationModel = PaymentInformationModel.fromJson(apiResponse.response?.data);
 
       for(int index = 0; index < (_paymentInformationModel?.data?.length ?? 0) ; index++) {
+        final payment = _paymentInformationModel?.data?[index];
+        if (payment?.approvalStatus != 'approved' || payment?.isActive != true) {
+          continue;
+        }
         myMethodsIds.add(
           MethodModel(
-            id: _paymentInformationModel?.data?[index].withdrawMethodId,
-            inputName: _paymentInformationModel?.data?[index].methodName,
+            id: payment?.id,
+            inputName: payment?.methodName,
             type: 'my_methods',
-            methodFields: _paymentInformationModel?.data?[index].withdrawMethod?.methodFields,
-            methodInfo: _paymentInformationModel?.data?[index].methodInfo,
-            isDefault: _paymentInformationModel?.data?[index].isDefault ?? false,
+            methodFields: payment?.withdrawMethod?.methodFields,
+            methodInfo: payment?.methodInfo,
+            isDefault: payment?.isDefault ?? false,
           )
         );
       }
@@ -215,20 +285,21 @@ class WalletController with ChangeNotifier{
 
 
   void setDefaultPaymentMethod () {
-    if(methodSelected == null || (!(methodSelected?.isDefault ?? false) && myMethodsIds.isNotEmpty)) {
-      for(MethodModel? paymentInfo in myMethodsIds) {
-        if(paymentInfo?.isDefault ?? false) {
-          setMethodTypeIndex(
-            paymentInfo,
-            notify: false,
-          );
-        }
+    if (methodSelected != null) {
+      return;
+    }
+
+    MethodModel? selected;
+    for (final paymentInfo in myMethodsIds) {
+      if (paymentInfo?.isDefault ?? false) {
+        selected = paymentInfo;
+        break;
       }
-    } else if (methodSelected == null && methodsIds.isNotEmpty) {
-      setMethodTypeIndex(
-        methodsIds.first,
-        notify: false,
-      );
+    }
+    selected ??= myMethodsIds.isNotEmpty ? myMethodsIds.first : null;
+    selected ??= methodsIds.isNotEmpty ? methodsIds.first : null;
+    if (selected != null) {
+      setMethodTypeIndex(selected, notify: false);
     }
   }
 

@@ -129,13 +129,12 @@ class ProfileScreenViewState extends State<ProfileScreenView> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB( Dimensions.paddingSizeMedium,
                        Dimensions.paddingSeven, Dimensions.paddingSizeMedium, Dimensions.paddingSizeMedium),
+                  // Keep the profile focused on store activity; earnings are managed by admin.
                   child: Row(mainAxisAlignment:MainAxisAlignment.spaceBetween,children: [
 
                     Expanded(child: InfoItem(icon: Images.totalProducts, title: 'products',amount: profile.userInfoModel!.productCount.toString())),
                     const SizedBox(width: Dimensions.paddingSizeSmall,),
                     Expanded(child: InfoItem(icon: Images.totalOrders, title: 'orders',amount: profile.userInfoModel!.ordersCount.toString())),
-                    const SizedBox(width: Dimensions.paddingSizeSmall,),
-                    Expanded(child: InfoItem(icon: Images.totalEarningIcon, title: 'earned',amount: profile.userInfoModel?.wallet?.totalEarning.toString(), isMoney: true)),
 
                   ],),
                 ),

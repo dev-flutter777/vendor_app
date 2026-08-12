@@ -43,7 +43,8 @@ class ProductRepository implements ProductRepositoryInterface{
         if (filterModel?.authorIds != null && filterModel!.authorIds!.isNotEmpty) 'author_ids': jsonEncode(filterModel.authorIds),
         if (filterModel?.status != null && filterModel!.status!.isNotEmpty) 'product_status' :
         filterModel.status?.length == 1 ? filterModel.status!.contains('active') ? jsonEncode([1]) : filterModel.status!.contains('inactive') ? jsonEncode([0]) : jsonEncode([0,1]) : jsonEncode([0,1]),
-        if (filterModel?.isApproved != null && filterModel!.isApproved!.isNotEmpty && filterModel.isApproved != 'all') 'request_status': filterModel.isApproved == 'approved' ? '1' : filterModel.isApproved == 'denied' ? '2': filterModel.isApproved == 'new_product' ? '0' : '',
+        if (filterModel?.isApproved != null && filterModel!.isApproved!.isNotEmpty && const ['submitted', 'under_review', 'approved_published', 'suspended', 'rejected', 'deleted'].contains(filterModel.isApproved)) 'seller_review_status': filterModel.isApproved,
+        if (filterModel?.isApproved != null && filterModel!.isApproved!.isNotEmpty && filterModel.isApproved != 'all' && !const ['submitted', 'under_review', 'approved_published', 'suspended', 'rejected', 'deleted'].contains(filterModel.isApproved)) 'request_status': filterModel.isApproved == 'approved' ? '1' : filterModel.isApproved == 'denied' ? '2': filterModel.isApproved == 'new_product' ? '0' : '',
         if (filterModel?.sorting != null && filterModel!.sorting!.isNotEmpty) 'filter_sort_by': filterModel.sorting,
       };
 
@@ -85,6 +86,18 @@ class ProductRepository implements ProductRepositoryInterface{
   Future<ApiResponse> getStockLimitedProductList(int offset, String languageCode ) async {
     try {
       final response = await dioClient!.get('${AppConstants.stockOutProductUri}$offset',
+        options: Options(headers: {AppConstants.langKey: languageCode}),
+      );
+      return ApiResponse.withSuccess(response);
+    } catch (e) {
+      return ApiResponse.withError(ApiErrorHandler.getMessage(e));
+    }
+  }
+
+  @override
+  Future<ApiResponse> getStockViolations(String languageCode) async {
+    try {
+      final response = await dioClient!.get(AppConstants.stockViolationsUri,
         options: Options(headers: {AppConstants.langKey: languageCode}),
       );
       return ApiResponse.withSuccess(response);

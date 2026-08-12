@@ -2,17 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_switch/flutter_switch.dart';
 import 'package:provider/provider.dart';
 import 'package:sixvalley_vendor_app/localization/language_constrants.dart';
-import 'package:sixvalley_vendor_app/features/shipping/controllers/shipping_controller.dart';
 import 'package:sixvalley_vendor_app/theme/controllers/theme_controller.dart';
 import 'package:sixvalley_vendor_app/utill/dimensions.dart';
 import 'package:sixvalley_vendor_app/utill/images.dart';
 import 'package:sixvalley_vendor_app/utill/styles.dart';
 import 'package:sixvalley_vendor_app/features/bank_info/screens/bank_info_screen.dart';
 import 'package:sixvalley_vendor_app/features/menu/widgets/sign_out_confirmation_dialog_widget.dart';
-import 'package:sixvalley_vendor_app/features/settings/screens/order_wise_shipping_list_screen.dart';
 import 'package:sixvalley_vendor_app/features/settings/screens/setting_screen.dart';
-import 'package:sixvalley_vendor_app/features/shipping/screens/category_wise_shipping_screen.dart';
-import 'package:sixvalley_vendor_app/features/shipping/widgets/product_wise_shipping_widget.dart';
 
 class ThemeChangerWidget extends StatelessWidget {
   const ThemeChangerWidget({super.key});
@@ -52,19 +48,7 @@ class ThemeChangerWidget extends StatelessWidget {
       ),
         const SizedBox(height: Dimensions.paddingSizeExtraSmall,),
 
-        SectionItemWidget(icon: Images.box, title: 'shipping_method',
-          onTap: () {
-          if(Provider.of<ShippingController>(context, listen: false).selectedShippingType == "category_wise"){
-            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CategoryWiseShippingScreen()));
-          }else if(Provider.of<ShippingController>(context, listen: false).selectedShippingType == "order_wise"){
-            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const OrderWiseShippingScreen()));
-          }else{
-            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ProductWiseShippingWidget()));
-          }},
-        ),
-
-
-        const SizedBox(height: Dimensions.paddingSizeExtraSmall,),
+        // Shipping configuration is controlled by admin and is not exposed to vendors.
 
         SectionItemWidget(icon: Images.editProfile, title: 'settings',
           onTap: (){

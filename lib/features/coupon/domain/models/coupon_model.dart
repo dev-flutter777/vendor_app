@@ -3,13 +3,18 @@ class CouponModel {
   String? limit;
   String? offset;
   List<Coupons>? coupons;
+  CouponEntitlement? couponEntitlement;
 
-  CouponModel({this.totalSize, this.limit, this.offset, this.coupons});
+  CouponModel({this.totalSize, this.limit, this.offset, this.coupons, this.couponEntitlement});
 
   CouponModel.fromJson(Map<String, dynamic> json) {
     totalSize = json['total_size'];
     limit = json['limit'];
     offset = json['offset'];
+    // Server-owned package quota determines whether the seller can create another coupon.
+    if (json['coupon_entitlement'] != null) {
+      couponEntitlement = CouponEntitlement.fromJson(json['coupon_entitlement']);
+    }
     if (json['coupons'] != null) {
       coupons = <Coupons>[];
       json['coupons'].forEach((v) {
@@ -23,11 +28,48 @@ class CouponModel {
     data['total_size'] = totalSize;
     data['limit'] = limit;
     data['offset'] = offset;
+    if (couponEntitlement != null) {
+      data['coupon_entitlement'] = couponEntitlement!.toJson();
+    }
     if (coupons != null) {
       data['coupons'] = coupons!.map((v) => v.toJson()).toList();
     }
     return data;
   }
+}
+
+class CouponEntitlement {
+  bool allowed;
+  int limit;
+  int used;
+  int adjustment;
+  int remaining;
+
+  CouponEntitlement({
+    required this.allowed,
+    required this.limit,
+    required this.used,
+    required this.adjustment,
+    required this.remaining,
+  });
+
+  factory CouponEntitlement.fromJson(Map<String, dynamic> json) {
+    return CouponEntitlement(
+      allowed: json['allowed'] == true,
+      limit: int.tryParse(json['limit'].toString()) ?? 0,
+      used: int.tryParse(json['used'].toString()) ?? 0,
+      adjustment: int.tryParse(json['adjustment'].toString()) ?? 0,
+      remaining: int.tryParse(json['remaining'].toString()) ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'allowed': allowed,
+    'limit': limit,
+    'used': used,
+    'adjustment': adjustment,
+    'remaining': remaining,
+  };
 }
 
 class Coupons {

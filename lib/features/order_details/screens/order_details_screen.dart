@@ -32,6 +32,7 @@ import 'package:sixvalley_vendor_app/features/order_details/widgets/order_top_se
 import 'package:sixvalley_vendor_app/features/order_details/widgets/payment_status_widget.dart';
 import 'package:sixvalley_vendor_app/features/order_details/widgets/shipping_and_biilling_widget.dart';
 import 'package:sixvalley_vendor_app/features/order_details/widgets/third_party_delivery_info_widget.dart';
+import 'package:sixvalley_vendor_app/features/order_details/widgets/seller_order_insurance_gate_widget.dart';
 import '../../../common/basewidgets/custom_confirmation_dialog_widget.dart' show CustomConfirmationDialogWidget;
 
 
@@ -94,6 +95,9 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
             builder:(context, orderController, child){
               return Consumer<OrderDetailsController>(
                 builder: (context, orderDetailsController, child) {
+                  if (orderDetailsController.sellerOrderInsurance?.insurance?.detailsHidden == true) {
+                    return SellerOrderInsuranceGateWidget(orderId: widget.orderId.toString());
+                  }
                   double itemsPrice = 0;
                   double discount = 0;
                   double? eeDiscount = 0;

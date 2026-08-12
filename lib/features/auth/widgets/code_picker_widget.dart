@@ -154,12 +154,12 @@ class CodePickerWidgetState extends State<CodePickerWidget> {
     if (widget.builder != null) {
       internalWidget = InkWell(
         splashColor: Colors.transparent,
-        onTap: showCodePickerWidgetDialog,
+        onTap: null,
         child: widget.builder!(selectedItem),
       );
     } else {
       internalWidget = TextButton(
-        onPressed: widget.enabled ? showCodePickerWidgetDialog : null,
+        onPressed: null,
         child: Padding( padding: widget.padding,
           child: Flex( direction: Axis.horizontal, mainAxisSize: MainAxisSize.min,
             children: <Widget>[
@@ -194,20 +194,6 @@ class CodePickerWidgetState extends State<CodePickerWidget> {
                     overflow: widget.textOverflow,
                   ),
                 ),
-              if (widget.showDropDownButton)
-                Flexible(
-                  flex: widget.alignLeft ? 0 : 1,
-                  fit: widget.alignLeft ? FlexFit.tight : FlexFit.loose,
-                  child: Padding(
-                      padding: widget.alignLeft
-                          ? const EdgeInsets.only(right: 0.0, left: 8.0)
-                          : const EdgeInsets.only(right: 0.0),
-                      child: Icon(
-                        Icons.arrow_drop_down,
-                        color: Colors.grey,
-                        size: widget.flagWidth,
-                      )),
-                ),
             ],
           ),
         ),
@@ -221,6 +207,7 @@ class CodePickerWidgetState extends State<CodePickerWidget> {
     super.didChangeDependencies();
 
     elements = elements.map((element) => element.localize(context)).toList();
+    selectedItem = _egyptCode();
     _onInit(selectedItem);
   }
 
@@ -229,18 +216,7 @@ class CodePickerWidgetState extends State<CodePickerWidget> {
     super.didUpdateWidget(oldWidget);
 
     if (oldWidget.initialSelection != widget.initialSelection) {
-      if (widget.initialSelection != null) {
-        selectedItem = elements.firstWhere(
-                (criteria) =>
-            (criteria.code!.toUpperCase() ==
-                widget.initialSelection!.toUpperCase()) ||
-                (criteria.dialCode == widget.initialSelection) ||
-                (criteria.name!.toUpperCase() ==
-                    widget.initialSelection!.toUpperCase()),
-            orElse: () => elements[0]);
-      } else {
-        selectedItem = elements[0];
-      }
+      selectedItem = _egyptCode();
       _onInit(selectedItem);
     }
   }
@@ -249,18 +225,7 @@ class CodePickerWidgetState extends State<CodePickerWidget> {
   void initState() {
     super.initState();
 
-    if (widget.initialSelection != null) {
-      selectedItem = elements.firstWhere(
-              (item) =>
-          (item.code!.toUpperCase() ==
-              widget.initialSelection!.toUpperCase()) ||
-              (item.dialCode == widget.initialSelection) ||
-              (item.name!.toUpperCase() ==
-                  widget.initialSelection!.toUpperCase()),
-          orElse: () => elements[0]);
-    } else {
-      selectedItem = elements[0];
-    }
+    selectedItem = _egyptCode();
 
     favoriteElements = elements
         .where((item) =>
@@ -271,6 +236,11 @@ class CodePickerWidgetState extends State<CodePickerWidget> {
         null)
         .toList();
   }
+
+  CountryCode _egyptCode() => elements.firstWhere(
+        (item) => item.code?.toUpperCase() == 'EG',
+        orElse: () => CountryCode.fromCountryCode('EG'),
+      );
 
   void showCodePickerWidgetDialog() async {
     final item = await showDialog(

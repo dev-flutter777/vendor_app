@@ -4,24 +4,20 @@ import 'package:provider/provider.dart';
 import 'package:sixvalley_vendor_app/features/notification/controllers/notification_controller.dart';
 import 'package:sixvalley_vendor_app/features/product/domain/models/product_model.dart';
 import 'package:sixvalley_vendor_app/features/bank_info/controllers/bank_info_controller.dart';
-import 'package:sixvalley_vendor_app/features/delivery_man/controllers/delivery_man_controller.dart';
 import 'package:sixvalley_vendor_app/features/order/controllers/order_controller.dart';
 import 'package:sixvalley_vendor_app/features/product/controllers/product_controller.dart';
 import 'package:sixvalley_vendor_app/features/profile/controllers/profile_controller.dart';
-import 'package:sixvalley_vendor_app/features/review/controllers/product_review_controller.dart';
-import 'package:sixvalley_vendor_app/features/shipping/controllers/shipping_controller.dart';
 import 'package:sixvalley_vendor_app/features/splash/controllers/splash_controller.dart';
 import 'package:sixvalley_vendor_app/utill/dimensions.dart';
 import 'package:sixvalley_vendor_app/utill/images.dart';
 import 'package:sixvalley_vendor_app/utill/styles.dart';
-import 'package:sixvalley_vendor_app/features/home/widgets/chart_widget.dart';
 import 'package:sixvalley_vendor_app/features/home/widgets/completed_order_widget.dart';
 import 'package:sixvalley_vendor_app/features/home/widgets/on_going_order_widget.dart';
 import 'package:sixvalley_vendor_app/features/product/widgets/stock_out_product_widget.dart';
 import 'package:sixvalley_vendor_app/features/notification/screens/notification_screen.dart';
+import 'package:sixvalley_vendor_app/features/auth/widgets/seller_activation_banner_widget.dart';
 import 'package:sixvalley_vendor_app/features/product/screens/most_popular_product_screen.dart';
 import 'package:sixvalley_vendor_app/features/product/screens/top_selling_product_screen.dart';
-import 'package:sixvalley_vendor_app/features/delivery_man/widgets/top_delivery_man_view_widget.dart';
 
 
 class HomePageScreen extends StatefulWidget {
@@ -36,33 +32,29 @@ class _HomePageScreenState extends State<HomePageScreen> {
   final ScrollController _scrollController = ScrollController();
   Future<void> _loadData(BuildContext context, bool reload) async {
     Provider.of<ProfileController>(context, listen: false).getSellerInfo();
-    Provider.of<BankInfoController>(context, listen: false).getBankInfo(context);
     if(Provider.of<OrderController>(context, listen: false).orderModel == null || reload) {
       Provider.of<OrderController>(context, listen: false).getOrderList(context,1,'all', null, reload: reload);
     }
+    // This summary powers visible order-status cards, not the removed earnings screen.
     Provider.of<BankInfoController>(context, listen: false).getAnalyticsFilterData(context, 'overall');
     Provider.of<SplashController>(context,listen: false).getColorList();
     Provider.of<ProductController>(context,listen: false).getStockOutProductList(1, 'en', reload: reload);
 
     Provider.of<ProductController>(context,listen: false).getTopSellingProductList(1, context, 'en', reload: reload);
-    Provider.of<ShippingController>(context,listen: false).getCategoryWiseShippingMethod();
-    Provider.of<ShippingController>(context,listen: false).getSelectedShippingMethodType(context);
-    Provider.of<DeliveryManController>(context, listen: false).getTopDeliveryManList(context);
-    Provider.of<BankInfoController>(context, listen: false).getDashboardRevenueData(context,'yearEarn');
-
-    Provider.of<BankInfoController>(context, listen: false).setRevenueFilterType(0, false);
+    // Financial, delivery, review, and seller-shipping data are admin-managed.
+    // Do not request them from the vendor home screen after their UI was removed.
     Provider.of<NotificationController>(context, listen: false).getNotificationList(1);
     Provider.of<ProductController>(context, listen: false).getStockLimitStatus(context);
     Provider.of<ProductController>(context,listen: false).setShowCookie(true, notify: false);
 
     Provider.of<ProductController>(context,listen: false).getMostPopularProductList(1, context, 'en', reload: reload);
 
-    Provider.of<ProductReviewController>(context, listen: false).getReviewList(context);
   }
 
   @override
   void initState() {
     _loadData(context, false);
+    // Initialize the visible order-status filter; revenue charts remain removed.
     Provider.of<BankInfoController>(context, listen: false).setAnalyticsFilterName(context,'overall', false);
     Provider.of<BankInfoController>(context, listen: false).setAnalyticsFilterType(0, false);
     super.initState();
@@ -94,6 +86,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
       body: Consumer<OrderController>(builder: (context, order, child) {
           return RefreshIndicator(
             onRefresh: () async {
+              // Refresh the visible order-status filter without restoring revenue charts.
               Provider.of<BankInfoController>(context, listen: false).setAnalyticsFilterName(context, 'overall',true);
               Provider.of<BankInfoController>(context, listen: false).setAnalyticsFilterType(0,true);
               await _loadData(context, true);
@@ -153,6 +146,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: Dimensions.paddingSizeSmall),
+                      const SellerActivationBannerWidget(),
                       OngoingOrderWidget(callback: widget.callback),
 
                       CompletedOrderWidget(callback: widget.callback),
@@ -177,18 +171,12 @@ class _HomePageScreenState extends State<HomePageScreen> {
                       ),
                       const SizedBox(height: Dimensions.paddingSizeSmall),
 
-                      const ChartWidget(),
-
-                      const SizedBox(height: Dimensions.paddingSizeSmall),
-
                       const TopSellingProductScreen(isMain: true),
                      // const SizedBox(height: Dimensions.paddingSizeSmall),
 
                       const MostPopularProductScreen(isMain: true),
+                      // Earnings charts and delivery rankings are shown to admin only.
                       const SizedBox(height: Dimensions.paddingSizeSmall),
-
-                      Provider.of<SplashController>(context, listen: false).configModel!.shippingMethod != 'inhouse_shipping' ?
-                      const TopDeliveryManViewWidget(isMain: true) : const SizedBox()
 
                     ],
                   ),

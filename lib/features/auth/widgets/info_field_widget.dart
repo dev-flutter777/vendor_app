@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:country_code_picker/country_code_picker.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -13,13 +12,12 @@ import 'package:sixvalley_vendor_app/features/splash/domain/models/business_page
 import 'package:sixvalley_vendor_app/helper/date_converter.dart';
 import 'package:sixvalley_vendor_app/localization/language_constrants.dart';
 import 'package:sixvalley_vendor_app/features/auth/controllers/auth_controller.dart';
-import 'package:sixvalley_vendor_app/features/splash/controllers/splash_controller.dart';
 import 'package:sixvalley_vendor_app/theme/controllers/theme_controller.dart';
 import 'package:sixvalley_vendor_app/utill/dimensions.dart';
 import 'package:sixvalley_vendor_app/utill/images.dart';
 import 'package:sixvalley_vendor_app/utill/styles.dart';
-import 'package:sixvalley_vendor_app/features/auth/widgets/code_picker_widget.dart';
 import 'package:sixvalley_vendor_app/features/more/screens/html_view_screen.dart';
+import 'package:sixvalley_vendor_app/features/splash/controllers/splash_controller.dart';
 
 
 
@@ -32,7 +30,6 @@ class InfoFieldVIewWidget extends StatefulWidget {
 }
 
 class _InfoFieldVIewWidgetState extends State<InfoFieldVIewWidget> {
-  String? _countryDialCode = "+880";
   String currency = '',  country = '', selectedTimeZone = '';
 
   @override
@@ -41,10 +38,7 @@ class _InfoFieldVIewWidgetState extends State<InfoFieldVIewWidget> {
 
     final authController = Provider.of<AuthController>(context, listen: false);
 
-      _countryDialCode = CountryCode.fromCountryCode(Provider.of<SplashController>(context, listen: false).configModel!.countryCode!).dialCode;
-      if (authController.countryDialCode != _countryDialCode) {
-        _countryDialCode = authController.countryDialCode;
-      }
+    authController.setCountryDialCode('+20');
 
     authController.validPassCheck(authController.passwordController.text, isUpdate: false);
     if(authController.passwordController.text.isEmpty && authController.showPassView){
@@ -118,21 +112,15 @@ class _InfoFieldVIewWidgetState extends State<InfoFieldVIewWidget> {
                           ),
                           margin: const EdgeInsets.only(left: Dimensions.paddingSizeSmall, right: Dimensions.paddingSizeSmall),
                           child: Row(children: [
-                            CodePickerWidget(
-                              onChanged: (CountryCode countryCode) {
-                                _countryDialCode = countryCode.dialCode;
-                                authProvider.setCountryDialCode(_countryDialCode);
-                              },
-                              initialSelection: _countryDialCode,
-                              favorite: [authProvider.countryDialCode!],
-                              showDropDownButton: true,
-                              padding: EdgeInsets.zero,
-                              showFlagMain: true,
-                              textStyle: TextStyle(color: Theme.of(context).textTheme.displayLarge!.color),
-                              dialogTextStyle: robotoRegular.copyWith(
-                                fontSize: Dimensions.fontSizeDefault,
-                                color: Theme.of(context).textTheme.bodyLarge!.color,
+                            Container(
+                              height: 56,
+                              alignment: Alignment.center,
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Theme.of(context).hintColor.withValues(alpha: .35)),
+                                borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall),
                               ),
+                              child: const Text('+20'),
                             ),
 
                             Expanded(child: CustomTextFieldWidget(

@@ -43,7 +43,8 @@ class CustomEditDialogWidgetState extends State<CustomEditDialogWidget> {
     if (existing?.withdrawalMethodId != null && existing?.withdrawalMethodFields != null) {
       MethodModel? match;
 
-      match = walletController.methodsIds.firstWhere((m) => m?.id == existing!.withdrawalMethodId);
+      final allMethods = [...walletController.myMethodsIds, ...walletController.methodsIds];
+      match = allMethods.firstWhere((m) => m?.id == existing!.withdrawalMethodId, orElse: () => null);
 
       if (match != null) {
         walletController.setMethodTypeIndex(match, notify: false);
@@ -198,6 +199,16 @@ class CustomEditDialogWidgetState extends State<CustomEditDialogWidget> {
                         if(groupItems.isEmpty)
                           const SizedBox(height: Dimensions.paddingSizeSmall),
 
+                        if (dropdownItems.isEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: Dimensions.paddingSizeSmall),
+                            child: Text(
+                              getTranslated('no_payment_info', context) ?? 'No approved payment method available',
+                              style: robotoRegular.copyWith(color: Theme.of(context).hintColor),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal:Dimensions.paddingSizeSmall),
                           decoration: BoxDecoration(color: Theme.of(context).cardColor,
@@ -216,7 +227,7 @@ class CustomEditDialogWidgetState extends State<CustomEditDialogWidget> {
                         const SizedBox(height: Dimensions.paddingSizeDefault),
 
 
-                        if(withdraw.methodList.isNotEmpty &&
+                        if(withdraw.methodSelected?.methodInfo != null &&
                             withdraw.methodSelected?.methodInfo != null &&
                             withdraw.methodSelected!.methodInfo!.isNotEmpty && withdraw.methodSelected?.type == 'my_methods')
                           Container(
@@ -282,8 +293,7 @@ class CustomEditDialogWidgetState extends State<CustomEditDialogWidget> {
 
 
 
-                        if(withdraw.methodList.isNotEmpty &&
-                            withdraw.methodSelected?.methodFields != null &&
+                        if(withdraw.methodSelected?.methodFields != null &&
                             withdraw.inputFieldControllerList.isNotEmpty &&
                             withdraw.methodSelected!.methodFields!.isNotEmpty && withdraw.methodSelected?.type == 'other')
                           ListView.builder(
@@ -459,12 +469,10 @@ class CustomEditDialogWidgetState extends State<CustomEditDialogWidget> {
       showCustomSnackBarWidget(getTranslated('enter_balance', context), context, isToaster: true, sanckBarType: SnackBarType.warning);
     }
 
-    // else if (bal > double.parse(PriceConverter.convertPriceWithoutSymbol(context, Provider.of<ProfileController>(context, listen: false).userInfoModel!.wallet!.totalEarning))) {
-    //   Navigator.of(context).pop();
-    //   showCustomSnackBarWidget(getTranslated('insufficient_balance', context), context, isToaster: true, sanckBarType: SnackBarType.warning);
-    // }
-
-    else if (bal <= 0) {
+    else if (bal > widget.totalEarning) {
+      Navigator.of(context).pop();
+      showCustomSnackBarWidget(getTranslated('insufficient_balance', context), context, isToaster: true, sanckBarType: SnackBarType.warning);
+    } else if (bal <= 0) {
       Navigator.of(context).pop();
       showCustomSnackBarWidget(getTranslated('minimum_amount', context), context, isToaster: true, sanckBarType: SnackBarType.warning);
     } else {

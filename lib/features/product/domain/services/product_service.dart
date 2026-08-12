@@ -48,6 +48,11 @@ class ProductService implements ProductServiceInterface{
   }
 
   @override
+  Future getStockViolations(String languageCode) {
+    return productRepoInterface.getStockViolations(languageCode);
+  }
+
+  @override
   Future getTopSellingProductList(int offset, String languageCode) {
     return productRepoInterface.getTopSellingProductList(offset, languageCode);
   }

@@ -56,6 +56,47 @@ class OrderDetailsRepository implements OrderDetailsRepositoryInterface{
   }
 
   @override
+  Future<ApiResponse> getSellerOrderInsurance(String orderID) async {
+    try {
+      final response = await dioClient!.get('${AppConstants.orderDetails}$orderID${AppConstants.sellerOrderInsuranceSuffix}');
+      return ApiResponse.withSuccess(response);
+    } catch (e) {
+      return ApiResponse.withError(ApiErrorHandler.getMessage(e));
+    }
+  }
+
+  @override
+  Future<ApiResponse> paySellerOrderInsurance(String orderID, String paymentMethod) async {
+    try {
+      final response = await dioClient!.post(
+        '${AppConstants.orderDetails}$orderID${AppConstants.sellerOrderInsuranceSuffix}/pay',
+        data: {'payment_method': paymentMethod},
+      );
+      return ApiResponse.withSuccess(response);
+    } catch (e) {
+      return ApiResponse.withError(ApiErrorHandler.getMessage(e));
+    }
+  }
+
+  @override
+  Future<ApiResponse> submitSellerOrderInsuranceOffline(String orderID, String methodId, String proofPath, String note) async {
+    try {
+      final form = FormData.fromMap({
+        'method_id': methodId,
+        'payment_note': note,
+        'payment_proof': await MultipartFile.fromFile(proofPath, filename: basename(proofPath)),
+      });
+      final response = await dioClient!.post(
+        '${AppConstants.orderDetails}$orderID${AppConstants.sellerOrderInsuranceSuffix}/offline-payment',
+        data: form,
+      );
+      return ApiResponse.withSuccess(response);
+    } catch (e) {
+      return ApiResponse.withError(ApiErrorHandler.getMessage(e));
+    }
+  }
+
+  @override
   Future<ApiResponse> uploadAfterSellDigitalProduct(File? filePath, String token, String orderId) async {
     http.MultipartRequest request = http.MultipartRequest('POST', Uri.parse('${AppConstants.baseUrl}${AppConstants.digitalProductUploadAfterSell}'));
     request.headers.addAll(<String,String>{'Authorization': 'Bearer $token'});

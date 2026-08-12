@@ -241,6 +241,16 @@ class AddProductRepository implements AddProductRepositoryInterface{
       'tags': jsonEncode(tags),
       'publishing_house': jsonEncode(digitalVariationModel?.publishingHouse ?? []),
       'authors': jsonEncode(digitalVariationModel?.authors ?? []),
+      'sale_unit_type': product.saleUnitType,
+      'pieces_per_unit': product.piecesPerUnit,
+      'length': product.length,
+      'width': product.width,
+      'height': product.height,
+      'dimension_unit': product.dimensionUnit,
+      'weight': product.weight,
+      'weight_unit': product.weightUnit,
+      'production_date': product.productionDate,
+      'expiry_date': product.expiryDate,
     });
   }
 

@@ -17,6 +17,7 @@ import 'package:sixvalley_vendor_app/features/order/controllers/order_controller
 import 'package:sixvalley_vendor_app/features/order/domain/models/order_model.dart';
 import 'package:sixvalley_vendor_app/features/order_details/domain/models/order_details_model.dart';
 import 'package:sixvalley_vendor_app/features/order_details/domain/models/order_setup_model.dart';
+import 'package:sixvalley_vendor_app/features/order_details/domain/models/seller_order_insurance_model.dart';
 import 'package:sixvalley_vendor_app/features/order_details/domain/services/order_details_service_interface.dart';
 import 'package:sixvalley_vendor_app/helper/api_checker.dart';
 import 'package:sixvalley_vendor_app/localization/language_constrants.dart';
@@ -59,9 +60,28 @@ class OrderDetailsController extends ChangeNotifier{
   bool _isInvoiceLoading = false;
   bool get isInvoiceLoading => _isInvoiceLoading;
 
+  SellerOrderInsuranceEnvelope? _sellerOrderInsurance;
+  SellerOrderInsuranceEnvelope? get sellerOrderInsurance => _sellerOrderInsurance;
+  bool _insuranceLoading = false;
+  bool get insuranceLoading => _insuranceLoading;
+
 
   Future<void> getOrderDetails( String orderID) async {
     _orderDetails = null;
+    _sellerOrderInsurance = null;
+    _insuranceLoading = true;
+    final insuranceResponse = await orderDetailsServiceInterface.getSellerOrderInsurance(orderID);
+    _insuranceLoading = false;
+    if (insuranceResponse.response != null && insuranceResponse.response!.statusCode == 200) {
+      _sellerOrderInsurance = SellerOrderInsuranceEnvelope.fromJson(
+        Map<String, dynamic>.from(insuranceResponse.response!.data),
+      );
+      if (_sellerOrderInsurance?.insurance?.detailsHidden == true) {
+        _orderDetails = [];
+        notifyListeners();
+        return;
+      }
+    }
     ApiResponse apiResponse = await orderDetailsServiceInterface.getOrderDetails(orderID);
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
       _orderDetails = [];
@@ -71,6 +91,35 @@ class OrderDetailsController extends ChangeNotifier{
       ApiChecker.checkApi(apiResponse);
     }
     notifyListeners();
+  }
+
+  Future<String?> paySellerOrderInsurance(String orderID, String paymentMethod) async {
+    _insuranceLoading = true;
+    notifyListeners();
+    final response = await orderDetailsServiceInterface.paySellerOrderInsurance(orderID, paymentMethod);
+    _insuranceLoading = false;
+    if (response.response != null && response.response!.statusCode == 200) {
+      final redirect = response.response!.data['redirect_link']?.toString();
+      await getOrderDetails(orderID);
+      return redirect;
+    }
+    ApiChecker.checkApi(response);
+    notifyListeners();
+    return null;
+  }
+
+  Future<bool> submitSellerOrderInsuranceOffline(String orderID, String methodId, String proofPath, String note) async {
+    _insuranceLoading = true;
+    notifyListeners();
+    final response = await orderDetailsServiceInterface.submitSellerOrderInsuranceOffline(orderID, methodId, proofPath, note);
+    _insuranceLoading = false;
+    if (response.response != null && response.response!.statusCode == 200) {
+      await getOrderDetails(orderID);
+      return true;
+    }
+    ApiChecker.checkApi(response);
+    notifyListeners();
+    return false;
   }
 
 

@@ -92,6 +92,31 @@ class AuthService implements AuthServiceInterface{
   }
 
   @override
+  Future requiredRegistrationPolicies() => authRepoInterface.requiredRegistrationPolicies();
+
+  @override
+  Future acceptRegistrationPolicies(String registrationReference, List<int> policyVersionIds) => authRepoInterface.acceptRegistrationPolicies(registrationReference, policyVersionIds);
+
+  @override
+  Future sendRegistrationOtp(String registrationReference) => authRepoInterface.sendRegistrationOtp(registrationReference);
+
+  @override
+  Future verifyRegistrationOtp(String registrationReference, String otp) => authRepoInterface.verifyRegistrationOtp(registrationReference, otp);
+
+  @override
+  Future saveRegistrationReference(String value) => authRepoInterface.saveRegistrationReference(value);
+  @override
+  String getRegistrationReference() => authRepoInterface.getRegistrationReference();
+  @override
+  Future activationStatus(String registrationReference) => authRepoInterface.activationStatus(registrationReference);
+  @override
+  Future openActivationTicket(String registrationReference) => authRepoInterface.openActivationTicket(registrationReference);
+  @override
+  Future activationTicketMessages(String registrationReference, {int? ticketId}) => authRepoInterface.activationTicketMessages(registrationReference, ticketId: ticketId);
+  @override
+  Future sendActivationTicketMessage(String registrationReference, String body, {int? ticketId}) => authRepoInterface.sendActivationTicketMessage(registrationReference, body, ticketId: ticketId);
+
+  @override
   Future resetPassword(String identity, String otp, String password, String confirmPassword, String? token) async{
     ApiResponse apiResponse = await authRepoInterface.resetPassword(identity, otp, password, confirmPassword, token);
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {

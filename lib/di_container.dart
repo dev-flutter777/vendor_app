@@ -43,6 +43,14 @@ import 'package:sixvalley_vendor_app/features/clearance_sale/domain/services/cle
 import 'package:sixvalley_vendor_app/features/coupon/domain/repositories/coupon_repository_interface.dart';
 import 'package:sixvalley_vendor_app/features/coupon/domain/services/coupon_service.dart';
 import 'package:sixvalley_vendor_app/features/coupon/domain/services/coupon_service_interface.dart';
+import 'package:sixvalley_vendor_app/features/seller_package/domain/repositories/seller_package_repository.dart';
+import 'package:sixvalley_vendor_app/features/seller_package/domain/repositories/seller_package_repository_interface.dart';
+import 'package:sixvalley_vendor_app/features/seller_package/domain/services/seller_package_service.dart';
+import 'package:sixvalley_vendor_app/features/seller_package/domain/services/seller_package_service_interface.dart';
+import 'package:sixvalley_vendor_app/features/seller_promotion/domain/repositories/seller_promotion_repository.dart';
+import 'package:sixvalley_vendor_app/features/seller_promotion/domain/repositories/seller_promotion_repository_interface.dart';
+import 'package:sixvalley_vendor_app/features/seller_promotion/domain/services/seller_promotion_service.dart';
+import 'package:sixvalley_vendor_app/features/seller_promotion/domain/services/seller_promotion_service_interface.dart';
 import 'package:sixvalley_vendor_app/features/delivery_man/domain/repositories/delivery_man_repository_interface.dart';
 import 'package:sixvalley_vendor_app/features/emergency_contract/domain/repositories/emergency_contract_repository_interface.dart';
 import 'package:sixvalley_vendor_app/features/delivery_man/domain/services/delivery_service.dart';
@@ -150,6 +158,8 @@ import 'package:sixvalley_vendor_app/features/wallet/domain/services/wallet_serv
 import 'package:sixvalley_vendor_app/features/pos/controllers/cart_controller.dart';
 import 'package:sixvalley_vendor_app/features/chat/controllers/chat_controller.dart';
 import 'package:sixvalley_vendor_app/features/coupon/controllers/coupon_controller.dart';
+import 'package:sixvalley_vendor_app/features/seller_package/controllers/seller_package_controller.dart';
+import 'package:sixvalley_vendor_app/features/seller_promotion/controllers/seller_promotion_controller.dart';
 import 'package:sixvalley_vendor_app/features/delivery_man/controllers/delivery_man_controller.dart';
 import 'package:sixvalley_vendor_app/features/emergency_contract/controllers/emergency_contact_controller.dart';
 import 'package:sixvalley_vendor_app/features/language/controllers/language_controller.dart';
@@ -210,6 +220,11 @@ Future<void> init() async {
   sl.registerLazySingleton(() => chatRepoInterface);
   CouponRepositoryInterface couponRepoInterface = CouponRepository(dioClient: sl(), sharedPreferences: sl());
   sl.registerLazySingleton(() => couponRepoInterface);
+  // Separate dependency chain for seller plans so it cannot interfere with customer package APIs.
+  SellerPackageRepositoryInterface sellerPackageRepoInterface = SellerPackageRepository(dioClient: sl());
+  sl.registerLazySingleton(() => sellerPackageRepoInterface);
+  SellerPromotionRepositoryInterface sellerPromotionRepoInterface = SellerPromotionRepository(dioClient: sl());
+  sl.registerLazySingleton(() => sellerPromotionRepoInterface);
   DeliveryManRepositoryInterface deliveryManRepoInterface = DeliveryManRepository(dioClient: sl());
   sl.registerLazySingleton(() => deliveryManRepoInterface);
   EmergencyContractRepositoryInterface emergencyContractRepoInterface = EmergencyContactRepository(dioClient: sl());
@@ -278,6 +293,10 @@ Future<void> init() async {
   sl.registerLazySingleton(() => chatServiceInterface);
   CouponServiceInterface couponServiceInterface = CouponService(couponRepoInterface: sl());
   sl.registerLazySingleton(() => couponServiceInterface);
+  SellerPackageServiceInterface sellerPackageServiceInterface = SellerPackageService(sellerPackageRepositoryInterface: sl());
+  sl.registerLazySingleton(() => sellerPackageServiceInterface);
+  SellerPromotionServiceInterface sellerPromotionServiceInterface = SellerPromotionService(sellerPromotionRepositoryInterface: sl());
+  sl.registerLazySingleton(() => sellerPromotionServiceInterface);
   DeliveryServiceInterface deliveryServiceInterface = DeliveryService(deliveryManRepoInterface: sl());
   sl.registerLazySingleton(() => deliveryServiceInterface);
   EmergencyServiceInterface emergencyServiceInterface = EmergencyService(emergencyContractRepoInterface: sl());
@@ -377,6 +396,8 @@ Future<void> init() async {
   sl.registerFactory(() => BankInfoController(bankInfoServiceInterface: sl()));
   sl.registerFactory(() => ChatController(chatServiceInterface: sl()));
   sl.registerFactory(() => CouponController(couponServiceInterface: sl()));
+  sl.registerFactory(() => SellerPackageController(sellerPackageServiceInterface: sl()));
+  sl.registerFactory(() => SellerPromotionController(sellerPromotionServiceInterface: sl()));
   sl.registerFactory(() => DeliveryManController(deliveryServiceInterface: sl()));
   sl.registerFactory(() => EmergencyContactController(emergencyServiceInterface: sl()));
   sl.registerFactory(() => OrderController(orderServiceInterface: sl()));

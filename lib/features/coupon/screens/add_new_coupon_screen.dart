@@ -19,6 +19,7 @@ import 'package:sixvalley_vendor_app/common/basewidgets/custom_field_with_title_
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_snackbar_widget.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/textfeild/custom_text_feild_widget.dart';
 import 'package:sixvalley_vendor_app/features/pos/screens/customer_search_screen.dart';
+import 'package:sixvalley_vendor_app/features/seller_package/screens/seller_package_screen.dart';
 
 class AddNewCouponScreen extends StatefulWidget {
   final Coupons? coupons;
@@ -38,6 +39,8 @@ class _AddNewCouponScreenState extends State<AddNewCouponScreen> {
   TextEditingController maximumDiscountController = TextEditingController();
 
   bool update = false;
+  bool _eligibilityChecked = false;
+  bool _canCreateCoupon = true;
 
   @override
   void initState() {
@@ -54,6 +57,8 @@ class _AddNewCouponScreenState extends State<AddNewCouponScreen> {
       Provider.of<CouponController>(context, listen: false).endDate = DateTime.parse(widget.coupons!.expireDate!);
     } else {
       Provider.of<CouponController>(context, listen: false).clearCouponData();
+      // A direct route to this form still requires the server-owned package coupon quota.
+      Future.microtask(_checkCouponEligibility);
     }
     Provider.of<CouponController>(context, listen: false).getCouponCustomerList(context,'');
     if(Provider.of<CouponController>(context, listen: false).customerSelectedName == ''){
@@ -64,6 +69,35 @@ class _AddNewCouponScreenState extends State<AddNewCouponScreen> {
   }
   @override
   Widget build(BuildContext context) {
+    if (!update && !_eligibilityChecked) {
+      return Scaffold(
+        appBar: CustomAppBarWidget(title: getTranslated('coupon_setup', context)),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (!update && !_canCreateCoupon) {
+      return Scaffold(
+        appBar: CustomAppBarWidget(title: getTranslated('coupon_setup', context)),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(Dimensions.paddingSizeLarge),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Icon(Icons.lock_outline, size: 40, color: Theme.of(context).colorScheme.error),
+              const SizedBox(height: Dimensions.paddingSizeDefault),
+              const Text('Your current package has no coupon quota available.', textAlign: TextAlign.center),
+              const SizedBox(height: Dimensions.paddingSizeDefault),
+              OutlinedButton.icon(
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SellerPackageScreen())),
+                icon: const Icon(Icons.inventory_2_outlined),
+                label: const Text('View packages'),
+              ),
+            ]),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: CustomAppBarWidget(title: getTranslated('coupon_setup', context)),
       body: Consumer<CouponController>(
@@ -343,5 +377,20 @@ class _AddNewCouponScreenState extends State<AddNewCouponScreen> {
         }
       ),
     );
+  }
+
+  Future<void> _checkCouponEligibility() async {
+    final couponController = Provider.of<CouponController>(context, listen: false);
+    if (couponController.couponModel == null) {
+      await couponController.getCouponList(context, 1);
+    }
+    if (!mounted) return;
+
+    final entitlement = couponController.couponModel?.couponEntitlement;
+    // A failed entitlement request remains protected by the create API and does not falsely block the seller.
+    setState(() {
+      _canCreateCoupon = entitlement?.allowed ?? true;
+      _eligibilityChecked = true;
+    });
   }
 }

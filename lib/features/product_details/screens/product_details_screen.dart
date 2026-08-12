@@ -43,6 +43,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Ticker
 
   @override
   Widget build(BuildContext context) {
+    final reviewStatus = widget.productModel?.sellerReviewStatus ?? (widget.productModel?.requestStatus == 1 ? 'approved_published' : widget.productModel?.requestStatus == 2 ? 'rejected' : 'submitted');
+    final reviewReason = widget.productModel?.sellerReviewReason ?? widget.productModel?.deniedNote;
     return Scaffold(
       appBar: CustomAppBarWidget(
         title: getTranslated('product_details', context),
@@ -51,7 +53,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Ticker
           color: Theme.of(context).textTheme.bodyLarge!.color,
         ),
         isBackButtonExist: true,
-        isSwitch: widget.productModel!.requestStatus == 1 ? true: false,
+        isSwitch: reviewStatus == 'approved_published',
         isAction: true,
       productSwitch: true,
       switchAction: (value) {
@@ -135,6 +137,12 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Ticker
               ),
 
               const SizedBox(height: Dimensions.paddingSizeSmall),
+              if(reviewReason != null && reviewReason.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
+                  child: Text('${getTranslated('review_reason', context) ?? getTranslated('note', context)}: $reviewReason', style: robotoRegular.copyWith(color: Theme.of(context).colorScheme.error)),
+                ),
+              if(reviewReason != null && reviewReason.isNotEmpty) const SizedBox(height: Dimensions.paddingSizeSmall),
               Expanded(child: TabBarView(
                 physics: const NeverScrollableScrollPhysics(),
                 controller: _tabController,

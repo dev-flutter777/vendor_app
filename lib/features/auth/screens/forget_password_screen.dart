@@ -1,8 +1,6 @@
-import 'package:country_code_picker/country_code_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sixvalley_vendor_app/features/splash/domain/models/config_model.dart';
-import 'package:sixvalley_vendor_app/helper/number_checker_healper.dart';
 import 'package:sixvalley_vendor_app/localization/language_constrants.dart';
 import 'package:sixvalley_vendor_app/features/auth/controllers/auth_controller.dart';
 import 'package:sixvalley_vendor_app/features/splash/controllers/splash_controller.dart';
@@ -26,7 +24,7 @@ class ForgotPasswordScreen extends StatefulWidget {
 }
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
-  String? _countryCode;
+  static const String _egyptDialCode = '+20';
 
   final TextEditingController _controller = TextEditingController();
   final TextEditingController _numberController = TextEditingController();
@@ -35,9 +33,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   void initState() {
     super.initState();
-    _countryCode = CountryCode.fromCountryCode(Provider.of<SplashController>(context, listen: false).configModel!.countryCode!).dialCode;
-    Provider.of<AuthController>(context,listen: false).setCountryDialCode(_countryCode);
+    Provider.of<AuthController>(context, listen: false).setCountryDialCode(_egyptDialCode);
+  }
 
+  String _localEgyptianMobile() {
+    var digits = _numberController.text.replaceAll(RegExp(r'\D'), '');
+    if (digits.startsWith('20')) digits = digits.substring(2);
+    if (digits.startsWith('0')) digits = digits.substring(1);
+    return digits;
   }
 
 
@@ -73,21 +76,28 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               Provider.of<SplashController>(context,listen: false).configModel!.forgotPasswordVerification == "phone" ?
               Consumer<AuthController>(
                 builder: (context, authProvider,_) {
-                  return CustomTextFieldWidget(
-                    border: true,
-                    hintText: getTranslated('number_hint', context),
-                    controller: _numberController,
-                    focusNode: _numberFocus,
-                    isPhoneNumber: true,
-                    textInputAction: TextInputAction.done,
-                    textInputType: TextInputType.phone,
-                    showCodePicker: true,
-                    countryDialCode: _countryCode,
-                    onCountryChanged: (CountryCode countryCode) {
-                      _countryCode = countryCode.dialCode!;
-                      authProvider.setCountryDialCode(countryCode.dialCode!);
-                    },
-                  );
+                  return Row(children: [
+                    Container(
+                      height: 56,
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Theme.of(context).hintColor),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text(_egyptDialCode),
+                    ),
+                    const SizedBox(width: Dimensions.paddingSizeSmall),
+                    Expanded(child: CustomTextFieldWidget(
+                      border: true,
+                      hintText: getTranslated('number_hint', context),
+                      controller: _numberController,
+                      focusNode: _numberFocus,
+                      isPhoneNumber: true,
+                      textInputAction: TextInputAction.done,
+                      textInputType: TextInputType.phone,
+                    )),
+                  ]);
                 }
               ) :
               CustomTextFieldWidget(
@@ -108,16 +118,18 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     onTap: () {
                       if(Provider.of<SplashController>(context,listen: false).configModel!.forgotPasswordVerification == "phone") {
 
-                        bool isNumber = NumberCheckerHelper.isNumber((_countryCode ?? '') + _numberController.text);
+                        final phone = _localEgyptianMobile();
 
                         if(_numberController.text.isEmpty) {
                           showCustomSnackBarWidget(getTranslated('PHONE_MUST_BE_REQUIRED', context), context, sanckBarType: SnackBarType.warning);
-                        }
-                        else{
-                          authProvider.forgotPassword((_countryCode ?? '') + _numberController.text.trim(), isNumber, configModel).then((value) {
+                        } else if (!RegExp(r'^1[0-25][0-9]{8}$').hasMatch(phone)) {
+                          showCustomSnackBarWidget(getTranslated('input_valid_phone_number', context), context, sanckBarType: SnackBarType.warning);
+                        } else {
+                          final identity = '$_egyptDialCode$phone';
+                          authProvider.forgotPassword(identity, true, configModel).then((value) {
                             if(value != null) {
                               if(value.isSuccess) {
-                                Navigator.push(Get.context!, MaterialPageRoute(builder: (_) => VerificationScreen((_countryCode ?? '') +_numberController.text.trim())));
+                                Navigator.push(Get.context!, MaterialPageRoute(builder: (_) => VerificationScreen(identity)));
                               } else {
                                 showCustomSnackBarWidget(getTranslated('input_valid_phone_number', Get.context!), Get.context!,  sanckBarType: SnackBarType.warning);
                               }
@@ -163,4 +175,3 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     );
   }
 }
-

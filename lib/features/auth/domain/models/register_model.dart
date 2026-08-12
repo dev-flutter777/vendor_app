@@ -9,6 +9,7 @@ class RegisterModel {
   String? shopAddress;
   String? businessTin;
   String? tinExpireDate;
-  RegisterModel({this.fName, this.lName, this.phone, this.email, this.password, this.confirmPassword, this.shopName, this.shopAddress, this.businessTin, this.tinExpireDate});
+  List<int> policyVersionIds;
+  RegisterModel({this.fName, this.lName, this.phone, this.email, this.password, this.confirmPassword, this.shopName, this.shopAddress, this.businessTin, this.tinExpireDate, this.policyVersionIds = const []});
 
 }

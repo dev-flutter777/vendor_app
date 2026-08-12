@@ -37,7 +37,7 @@ class ShopController extends ChangeNotifier {
 
   int _selectedIndex = 0;
   int get selectedIndex =>_selectedIndex;
-  String countryDialCode = '+880';
+  String countryDialCode = '+20';
 
   String ? _vacationDurationType = 'one_day';
   String ? get vacationDurationType => _vacationDurationType;
@@ -685,5 +685,4 @@ class ShopController extends ChangeNotifier {
 
 
 }
-
 

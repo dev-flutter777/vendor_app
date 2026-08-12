@@ -74,6 +74,17 @@ class Order {
   double? _editDueAmount;
   double? _editReturnAmount;
   double? _initOrderAmount;
+  int? queuePosition;
+  int? queuePriority;
+  bool? isCurrentQueueOrder;
+  bool? queueSoundEnabled;
+  String? operationalBlockedBy;
+  String? operationalBlockReason;
+  String? shipmentReference;
+  String? shippingOperationalStatus;
+  String? shippingResponsibleParty;
+  String? shippingFulfillmentMode;
+  Map<String, dynamic>? shippingPriceSnapshot;
 
 
   Order(
@@ -336,6 +347,19 @@ class Order {
     _editDueAmount = json['edit_due_amount'] != null ? double.tryParse(json['edit_due_amount'].toString()) : null;
     _editReturnAmount = json['edit_return_amount'] != null ? double.tryParse(json['edit_return_amount'].toString()) : null;
     _initOrderAmount = json['init_order_amount'] != null ? double.tryParse(json['init_order_amount'].toString()) : null;
+    final queue = json['queue_state'] is Map ? Map<String, dynamic>.from(json['queue_state']) : <String, dynamic>{};
+    queuePosition = int.tryParse('${queue['position'] ?? json['seller_queue_position'] ?? ''}');
+    queuePriority = int.tryParse('${queue['priority'] ?? json['seller_queue_priority'] ?? ''}');
+    isCurrentQueueOrder = queue['is_current'] == true || queue['is_current'] == 1;
+    queueSoundEnabled = queue['sound_enabled'] == null ? null : (queue['sound_enabled'] == true || queue['sound_enabled'] == 1);
+    operationalBlockedBy = queue['blocked_by']?.toString() ?? json['operational_blocked_by']?.toString();
+    operationalBlockReason = queue['block_reason']?.toString() ?? json['operational_block_reason']?.toString();
+    shipmentReference = json['shipment_reference']?.toString();
+    shippingOperationalStatus = json['shipping_operational_status']?.toString();
+    shippingResponsibleParty = json['shipping_responsible_party']?.toString();
+    shippingFulfillmentMode = json['shipping_fulfillment_mode']?.toString();
+    shippingPriceSnapshot = json['shipping_price_snapshot'] is Map
+        ? Map<String, dynamic>.from(json['shipping_price_snapshot']) : null;
   }
 }
 
@@ -647,6 +671,5 @@ class PaymentInfo {
   }
 
 }
-
 
 

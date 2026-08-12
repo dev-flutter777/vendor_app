@@ -15,19 +15,19 @@ import 'package:sixvalley_vendor_app/utill/app_constants.dart';
 import 'package:sixvalley_vendor_app/utill/dimensions.dart';
 import 'package:sixvalley_vendor_app/utill/images.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_bottom_sheet_widget.dart';
-import 'package:sixvalley_vendor_app/features/chat/screens/inbox_screen.dart';
 import 'package:sixvalley_vendor_app/features/coupon/screens/coupon_list_screen.dart';
+import 'package:sixvalley_vendor_app/features/seller_package/screens/seller_package_screen.dart';
+import 'package:sixvalley_vendor_app/features/seller_package/controllers/seller_package_controller.dart';
+import 'package:sixvalley_vendor_app/features/seller_promotion/screens/seller_promotion_screen.dart';
 import 'package:sixvalley_vendor_app/features/dashboard/screens/nav_bar_screen.dart';
-import 'package:sixvalley_vendor_app/features/delivery_man/screens/delivery_man_setup_screen.dart';
 import 'package:sixvalley_vendor_app/features/menu/widgets/sign_out_confirmation_dialog_widget.dart';
 import 'package:sixvalley_vendor_app/features/more/screens/html_view_screen.dart';
 import 'package:sixvalley_vendor_app/features/product/screens/product_list_screen.dart';
 import 'package:sixvalley_vendor_app/features/profile/screens/profile_view_screen.dart';
-import 'package:sixvalley_vendor_app/features/review/screens/product_review_screen.dart';
 import 'package:sixvalley_vendor_app/features/settings/screens/setting_screen.dart';
 import 'package:sixvalley_vendor_app/features/shop/screens/shop_screen.dart';
-import 'package:sixvalley_vendor_app/features/wallet/screens/wallet_screen.dart';
 import 'package:sixvalley_vendor_app/features/bank_info/screens/bank_info_screen.dart';
+import 'package:sixvalley_vendor_app/common/basewidgets/custom_snackbar_widget.dart';
 
 import '../../../main.dart';
 
@@ -43,6 +43,8 @@ class MenuBottomSheetWidget extends StatelessWidget {
     return Consumer<SplashController>(
       builder: (context, splashController, _) {
 
+        // Vendor support, delivery, earnings, and review workflows are managed by admin.
+        // Keep their entry points out of the vendor navigation without removing backend support.
         List<CustomBottomSheetWidget> activateMenu = [
           CustomBottomSheetWidget(image: '${Provider.of<ProfileController>(context, listen: false).userInfoModel?.imageFullUrl?.path}',
             isProfile: true, title: getTranslated('profile', context),
@@ -54,26 +56,25 @@ class MenuBottomSheetWidget extends StatelessWidget {
           ),
 
           CustomBottomSheetWidget(image: Images.addProduct, title: getTranslated('add_product', context),
-            onTap: () => _handleMenuTap(context, const AddProductTabView(fromHome: false)),
+            onTap: () => _openAddProductIfEligible(context),
           ),
 
           CustomBottomSheetWidget(image: Images.productIconPp, title: getTranslated('products', context),
             onTap: () => _handleMenuTap(context, const ProductListMenuScreen()),
           ),
 
-          CustomBottomSheetWidget(image: Images.reviewIcon, title: getTranslated('reviews', context),
-            onTap: () => _handleMenuTap(context, const ProductReviewScreen()),
-          ),
-
           CustomBottomSheetWidget(image: Images.couponIcon, title: getTranslated('coupons', context),
             onTap: () => _handleMenuTap(context, const CouponListScreen()),
           ),
 
-
-          CustomBottomSheetWidget(image: Images.deliveryManIcon, title: getTranslated('deliveryman', context),
-            onTap: () => _handleMenuTap(context, const DeliveryManSetupScreen()),
+          CustomBottomSheetWidget(image: Images.wallet, title: getTranslated('packages', context),
+            onTap: () => _handleMenuTap(context, const SellerPackageScreen()),
           ),
 
+          // Premium visibility is granted only when the current seller package has remaining quota.
+          CustomBottomSheetWidget(image: Images.productIconPp, title: getTranslated('promotions', context),
+            onTap: () => _handleMenuTap(context, const SellerPromotionScreen()),
+          ),
 
           if(configModel?.posActive == 1 && Provider.of<ProfileController>(context, listen: false).userInfoModel?.posActive == 1)
             CustomBottomSheetWidget(image: Images.pos, title: getTranslated('pos', context),
@@ -93,16 +94,6 @@ class MenuBottomSheetWidget extends StatelessWidget {
 
           CustomBottomSheetWidget(image: Images.clearanceSaleImage, title: getTranslated('clearance_sale', context),
             onTap: () => _handleMenuTap(context, const ClearanceSaleScreen()),
-          ),
-
-
-          CustomBottomSheetWidget(image: Images.wallet, title: getTranslated('wallet', context),
-            onTap: () => _handleMenuTap(context, const WalletScreen()),
-          ),
-
-
-          CustomBottomSheetWidget(image: Images.message, title: getTranslated('inbox', context),
-            onTap: () => _handleMenuTap(context, const InboxScreen()),
           ),
 
 
@@ -223,6 +214,30 @@ class MenuBottomSheetWidget extends StatelessWidget {
       Get.context!,
       MaterialPageRoute(builder: (_) => screen),
     ));
+  }
+
+  Future<void> _openAddProductIfEligible(BuildContext context) async {
+    final packageController = Provider.of<SellerPackageController>(context, listen: false);
+    await packageController.getOverview();
+    final overview = packageController.overview;
+    if (overview == null) return;
+
+    final subscription = overview.subscription.active;
+    String? reason;
+    if (subscription == null) {
+      reason = 'Activate a seller package before adding products.';
+    } else if (subscription.remainingProductLimit <= 0) {
+      reason = 'Your package product limit has been reached.';
+    }
+
+    if (reason != null) {
+      // Product eligibility is activation + active package + remaining quota.
+      _handleMenuTap(context, const SellerPackageScreen());
+      Future.microtask(() => showCustomSnackBarWidget(reason!, Get.context!, sanckBarType: SnackBarType.warning));
+      return;
+    }
+
+    _handleMenuTap(context, const AddProductTabView(fromHome: false));
   }
 
   BusinessPageModel? getPageBySlug(String slug, List<BusinessPageModel>? pagesList) {

@@ -113,6 +113,16 @@ class _OrderWidgetState extends State<OrderWidget> {
                           Text('(${getTranslated('edited', context)})',
                             style: robotoMedium.copyWith(color: Theme.of(context).textTheme.headlineMedium?.color,fontSize: Dimensions.fontSizeSmall),
                           ),
+                          if(widget.orderModel.queuePosition != null)
+                            Container(
+                              margin: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeExtraSmall),
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(color: Theme.of(context).colorScheme.secondaryContainer, borderRadius: BorderRadius.circular(12)),
+                              child: Text(
+                                "${getTranslated('seller_queue', context) ?? 'Queue'} #${widget.orderModel.queuePosition}${widget.orderModel.isCurrentQueueOrder == true ? ' - ${getTranslated('current_order', context) ?? 'Current'}' : ''}",
+                                style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeExtraSmall),
+                              ),
+                            ),
                           SizedBox(width: Dimensions.paddingSizeExtraSmall),
 
                           if(widget.orderModel.editedStatus == 1 && ((widget.orderModel.editDueAmount ?? 0) > 0 || (widget.orderModel.editReturnAmount ?? 0) > 0))
@@ -174,6 +184,10 @@ class _OrderWidgetState extends State<OrderWidget> {
                       widget.orderModel.createdAt != null?
                       Text(DateConverter.localDateToIsoStringAMPM(DateTime.parse(widget.orderModel.createdAt!)),
                         style: robotoRegular.copyWith(color: Theme.of(context).hintColor)) : const SizedBox(),
+
+                      if(widget.orderModel.shipmentReference != null)
+                        Text('${getTranslated('shipment_reference', context) ?? 'Shipment'}: ${widget.orderModel.shipmentReference}',
+                          style: robotoRegular.copyWith(color: Theme.of(context).hintColor, fontSize: Dimensions.fontSizeSmall)),
 
 
                       const SizedBox(height: Dimensions.paddingSizeSmall),
@@ -252,4 +266,3 @@ class _OrderWidgetState extends State<OrderWidget> {
 
 
 }
-

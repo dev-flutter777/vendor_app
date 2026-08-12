@@ -40,7 +40,7 @@ class _AddNewCustomerScreenState extends State<AddNewCustomerScreen> {
   final FocusNode _cityNode = FocusNode();
   final FocusNode _zipCodeNode = FocusNode();
   final FocusNode _addressNode = FocusNode();
-  String? _countryDialCode = "+880";
+  String? _countryDialCode = "+20";
   @override
   void initState() {
     _countryDialCode = CountryCode.fromCountryCode(Provider.of<SplashController>(context, listen: false).configModel!.countryCode!).dialCode;

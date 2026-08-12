@@ -55,6 +55,8 @@ class _ShopProductWidgetState extends State<ShopProductWidget> {
   Widget build(BuildContext context) {
     final productController = Provider.of<ProductController>(context, listen: false);
     String? filterStatus = productController.filterModel.isApproved;
+    final String reviewStatus = widget.productModel?.sellerReviewStatus ?? _legacyReviewStatus(widget.productModel?.requestStatus);
+    final String? reviewReason = widget.productModel?.sellerReviewReason ?? widget.productModel?.deniedNote;
 
     //bool showStatusTag = filterStatus == null || filterStatus == '' || filterStatus == 'all';
 
@@ -167,17 +169,11 @@ class _ShopProductWidgetState extends State<ShopProductWidget> {
                             Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: widget.productModel!.requestStatus == 1
-                                    ? Theme.of(context).colorScheme.onTertiaryContainer
-                                    : widget.productModel!.requestStatus == 2
-                                    ? Theme.of(context).colorScheme.error
-                                    : Theme.of(context).primaryColor,
+                                  color: _reviewStatusColor(context, reviewStatus),
                                   borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
                                 ),
                                 child: Text(
-                                  widget.productModel!.requestStatus == 0 ? getTranslated('new_request', context)! :
-                                  widget.productModel!.requestStatus == 1 ? getTranslated('approved', context)! :
-                                  getTranslated('denied', context)!,
+                                  getTranslated(reviewStatus, context) ?? reviewStatus,
                                   style: robotoRegular.copyWith(color: Colors.white, fontSize: Dimensions.fontSizeSmall),
                                 ),
                               ),
@@ -199,13 +195,13 @@ class _ShopProductWidgetState extends State<ShopProductWidget> {
                         ),
 
 
-                        if(widget.isDetails && widget.productModel!.deniedNote != null)
+                        if(reviewReason != null && reviewReason.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(top: Dimensions.paddingSizeExtraSmall),
                             child: Row(crossAxisAlignment: CrossAxisAlignment.start,children: [
-                              Text('${getTranslated('note', context)}: ',
+                              Text('${getTranslated('review_reason', context) ?? getTranslated('note', context)}: ',
                                 style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).primaryColor)),
-                              Expanded(child: Text( widget.productModel!.deniedNote!,overflow: TextOverflow.ellipsis,
+                              Expanded(child: Text(reviewReason,overflow: TextOverflow.ellipsis,
                                 maxLines: 50,
                                 style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeDefault))),
                             ],),
@@ -406,6 +402,22 @@ class _ShopProductWidgetState extends State<ShopProductWidget> {
 
       ],
     );
+  }
+
+  String _legacyReviewStatus(int? requestStatus) {
+    if (requestStatus == 1) return 'approved_published';
+    if (requestStatus == 2) return 'rejected';
+    return 'submitted';
+  }
+
+  Color _reviewStatusColor(BuildContext context, String status) {
+    switch (status) {
+      case 'approved_published': return Theme.of(context).colorScheme.onTertiaryContainer;
+      case 'suspended': return Colors.orange;
+      case 'rejected': return Theme.of(context).colorScheme.error;
+      case 'under_review': return Theme.of(context).primaryColor;
+      default: return Theme.of(context).primaryColor;
+    }
   }
 
   void _showPreview(String url, String productName, String fileName) {

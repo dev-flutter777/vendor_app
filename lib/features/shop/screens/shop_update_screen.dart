@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:country_code_picker/country_code_picker.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -34,7 +33,7 @@ class ShopUpdateScreenState extends State<ShopUpdateScreen> {
   final FocusNode _sNameFocus = FocusNode();
   final FocusNode _cNumberFocus = FocusNode();
   final FocusNode _addressFocus = FocusNode();
-  String countryDialCode = '+880';
+  static const String _egyptDialCode = '+20';
 
   final TextEditingController _shopNameController = TextEditingController();
   final TextEditingController _contactNumberController = TextEditingController();
@@ -45,6 +44,13 @@ class ShopUpdateScreenState extends State<ShopUpdateScreen> {
   File? file;
   final picker = ImagePicker();
   final GlobalKey<ScaffoldMessengerState> _scaffoldKey = GlobalKey<ScaffoldMessengerState>();
+
+  String _localEgyptianMobile(String value) {
+    var digits = value.replaceAll(RegExp(r'\D'), '');
+    if (digits.startsWith('20')) digits = digits.substring(2);
+    if (digits.startsWith('0')) digits = digits.substring(1);
+    return digits;
+  }
 
   void _choose() async {
     final pickedFile = await ImageValidationHelper.validateAndPickImage(
@@ -66,7 +72,7 @@ class ShopUpdateScreenState extends State<ShopUpdateScreen> {
     String address = _addressController.text.trim();
 
     if(Provider.of<ShopController>(context, listen: false).shopModel?.name == _shopNameController.text
-        && Provider.of<ShopController>(context, listen: false).shopModel?.contact == _contactNumberController.text
+        && _localEgyptianMobile(Provider.of<ShopController>(context, listen: false).shopModel?.contact ?? '') == _localEgyptianMobile(_contactNumberController.text)
         && Provider.of<ShopController>(context, listen: false).shopModel?.address == _addressController.text && file == null &&
     Provider.of<AuthController>(context, listen: false).shopBanner == null &&
         Provider.of<AuthController>(context, listen: false).secondaryBanner == null &&
@@ -76,6 +82,8 @@ class ShopUpdateScreenState extends State<ShopUpdateScreen> {
       showCustomSnackBarWidget(getTranslated('enter_first_name', context), context, sanckBarType: SnackBarType.warning );
     }else if (contactNumber.isEmpty) {
       showCustomSnackBarWidget(getTranslated('enter_contact_number', context), context, sanckBarType: SnackBarType.warning);
+    } else if (!RegExp(r'^1[0-25][0-9]{8}$').hasMatch(_localEgyptianMobile(contactNumber))) {
+      showCustomSnackBarWidget(getTranslated('input_valid_phone_number', context), context, sanckBarType: SnackBarType.warning);
     }else if (address.isEmpty) {
       showCustomSnackBarWidget(getTranslated('enter_address', context), context, sanckBarType: SnackBarType.warning);
     }else {
@@ -85,7 +93,7 @@ class ShopUpdateScreenState extends State<ShopUpdateScreen> {
       }
       ShopModel updateShopModel = Provider.of<ShopController>(context, listen: false).shopModel!;
       updateShopModel.name = _shopNameController.text;
-      updateShopModel.contact = _contactNumberController.text;
+      updateShopModel.contact = '$_egyptDialCode${_localEgyptianMobile(_contactNumberController.text)}';
       updateShopModel.address = _addressController.text;
       await Provider.of<ShopController>(context, listen: false).updateShopInfo(updateShopModel : updateShopModel, file : file);
     }
@@ -116,7 +124,7 @@ class ShopUpdateScreenState extends State<ShopUpdateScreen> {
       body: Consumer<ShopController>(
         builder: (context, shop, child) {
           _shopNameController.text = shop.shopModel?.name ?? '';
-          _contactNumberController.text = shop.shopModel?.contact ?? '';
+          _contactNumberController.text = _localEgyptianMobile(shop.shopModel?.contact ?? '');
           _addressController.text = shop.shopModel?.address ?? '';
 
           return Consumer<AuthController>(
@@ -259,24 +267,31 @@ class ShopUpdateScreenState extends State<ShopUpdateScreen> {
                           Text(getTranslated('contact_number', context)!, style: titilliumRegular.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color)),
 
                           const SizedBox(height: Dimensions.paddingSizeSmall),
-                          CustomTextFieldWidget(
-                            required: true,
-                            formProduct: true,
-                            prefixIconImage: null,
-                            border: true,
-                            focusNode: _cNumberFocus,
-                            nextNode: _addressFocus,
-                            controller: _contactNumberController,
-                            isPhoneNumber: true,
-                            countryDialCode: shop.countryDialCode,
-                            hintText: getTranslated('contact_number', context),
-                            showCodePicker: true,
-                            onCountryChanged: (CountryCode countryCode) {
-                              shop.countryDialCode = countryCode.dialCode!;
-                              shop.setCountryCode(countryCode.dialCode!);
-                            },
-                            isAmount: true,
-                          ),
+                          Row(children: [
+                            Container(
+                              height: 56,
+                              alignment: Alignment.center,
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Theme.of(context).hintColor),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text(_egyptDialCode),
+                            ),
+                            const SizedBox(width: Dimensions.paddingSizeSmall),
+                            Expanded(child: CustomTextFieldWidget(
+                              required: true,
+                              formProduct: true,
+                              prefixIconImage: null,
+                              border: true,
+                              focusNode: _cNumberFocus,
+                              nextNode: _addressFocus,
+                              controller: _contactNumberController,
+                              isPhoneNumber: true,
+                              hintText: getTranslated('contact_number', context),
+                              isAmount: true,
+                            )),
+                          ]),
                           const SizedBox(height: Dimensions.paddingSizeDefault),
 
                           CustomTextFieldWidget(

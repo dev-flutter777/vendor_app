@@ -117,6 +117,7 @@ class AddProductScreenState extends State<AddProductScreen> with TickerProviderS
     _update = widget.product != null;
 
     AddProductController addProductController = Provider.of<AddProductController>(context,listen: false);
+    addProductController.initializeProductSpecifications(widget.product);
 
     Provider.of<AddProductImageController>(context,listen: false).colorImageObject = [];
     Provider.of<AddProductImageController>(context,listen: false).productReturnImageList = [];
@@ -188,6 +189,20 @@ class AddProductScreenState extends State<AddProductScreen> with TickerProviderS
     Future.delayed(const Duration(milliseconds: 800), () async {
       Provider.of<AddProductImageController>(Get.context!,listen: false).getProductImage(widget.product!.id.toString(), isStorePreviousImage: true, isUpdate: true);
     });
+  }
+
+  Future<void> _selectProductDate(TextEditingController controller, bool expiry) async {
+    final now = DateTime.now();
+    final existing = DateTime.tryParse(controller.text);
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: existing ?? (expiry ? now.add(const Duration(days: 1)) : now),
+      firstDate: expiry ? DateTime(now.year, now.month, now.day + 1) : DateTime(2000),
+      lastDate: DateTime(now.year + 30),
+    );
+    if (selected != null) {
+      controller.text = '${selected.year.toString().padLeft(4, '0')}-${selected.month.toString().padLeft(2, '0')}-${selected.day.toString().padLeft(2, '0')}';
+    }
   }
 
 
@@ -569,6 +584,96 @@ class AddProductScreenState extends State<AddProductScreen> with TickerProviderS
                                       ),
                                     ) : const SizedBox(),
 
+                                    Padding(
+                                      padding: const EdgeInsets.fromLTRB(Dimensions.paddingSizeMedium, Dimensions.paddingSizeMedium, Dimensions.paddingSizeMedium, 0),
+                                      child: Row(children: [
+                                        Expanded(child: InkWell(
+                                          onTap: () => _selectProductDate(resProvider.productionDateController, false),
+                                          child: IgnorePointer(child: CustomTextFieldWidget(formProduct: true, required: true, border: true, readOnly: true, controller: resProvider.productionDateController, hintText: getTranslated('production_date', context)!)),
+                                        )),
+                                        const SizedBox(width: Dimensions.paddingSizeSmall),
+                                        Expanded(child: InkWell(
+                                          onTap: () => _selectProductDate(resProvider.expiryDateController, true),
+                                          child: IgnorePointer(child: CustomTextFieldWidget(formProduct: true, required: true, border: true, readOnly: true, controller: resProvider.expiryDateController, hintText: getTranslated('expiry_date', context)!)),
+                                        )),
+                                      ]),
+                                    ),
+
+                                    resProvider.productTypeIndex == 0 ? Padding(
+                                      padding: const EdgeInsets.fromLTRB(Dimensions.paddingSizeMedium, Dimensions.paddingSizeMedium, Dimensions.paddingSizeMedium, 0),
+                                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                        Text(getTranslated('seller_product_sale_unit_and_measurements', context)!, style: robotoBold.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color)),
+                                        const SizedBox(height: Dimensions.paddingSizeSmall),
+                                        DropdownDecoratorWidget(
+                                          title: 'seller_product_sale_unit_type',
+                                          isRequired: true,
+                                          child: DropdownButton<String>(
+                                            value: resProvider.saleUnitType,
+                                            isExpanded: true,
+                                            underline: const SizedBox(),
+                                            items: ['piece', 'package', 'box'].map((value) => DropdownMenuItem<String>(
+                                              value: value,
+                                              child: Text(getTranslated('seller_product_sale_unit_$value', context)!),
+                                            )).toList(),
+                                            selectedItemBuilder: (context) => ['piece', 'package', 'box'].map((value) => Text(getTranslated('seller_product_sale_unit_$value', context)!)).toList(),
+                                            onChanged: (value) {
+                                              if (value != null) resProvider.setSaleUnitType(value);
+                                            },
+                                          ),
+                                        ),
+                                        if (resProvider.saleUnitType == 'package' || resProvider.saleUnitType == 'box') ...[
+                                          const SizedBox(height: Dimensions.paddingSizeSmall),
+                                          CustomTextFieldWidget(
+                                            formProduct: true,
+                                            required: true,
+                                            border: true,
+                                            controller: resProvider.piecesPerUnitController,
+                                            textInputType: TextInputType.number,
+                                            textInputAction: TextInputAction.next,
+                                            hintText: getTranslated('seller_product_pieces_per_unit', context)!,
+                                          ),
+                                        ],
+                                        const SizedBox(height: Dimensions.paddingSizeSmall),
+                                        Text(getTranslated('seller_product_optional_dimensions', context)!, style: robotoRegular.copyWith(color: Theme.of(context).hintColor)),
+                                        const SizedBox(height: Dimensions.paddingSizeSmall),
+                                        Row(children: [
+                                          Expanded(child: CustomTextFieldWidget(formProduct: true, border: true, controller: resProvider.lengthController, textInputType: TextInputType.number, textInputAction: TextInputAction.next, hintText: getTranslated('seller_product_length', context)!)),
+                                          const SizedBox(width: Dimensions.paddingSizeSmall),
+                                          Expanded(child: CustomTextFieldWidget(formProduct: true, border: true, controller: resProvider.widthController, textInputType: TextInputType.number, textInputAction: TextInputAction.next, hintText: getTranslated('seller_product_width', context)!)),
+                                          const SizedBox(width: Dimensions.paddingSizeSmall),
+                                          Expanded(child: CustomTextFieldWidget(formProduct: true, border: true, controller: resProvider.heightController, textInputType: TextInputType.number, textInputAction: TextInputAction.next, hintText: getTranslated('seller_product_height', context)!)),
+                                        ]),
+                                        DropdownDecoratorWidget(
+                                          title: 'seller_product_dimension_unit',
+                                          child: DropdownButton<String>(
+                                            value: resProvider.dimensionUnit,
+                                            isExpanded: true,
+                                            underline: const SizedBox(),
+                                            items: const ['cm', 'm'].map((value) => DropdownMenuItem<String>(value: value, child: Text(value))).toList(),
+                                            onChanged: (value) {
+                                              if (value != null) resProvider.setDimensionUnit(value);
+                                            },
+                                          ),
+                                        ),
+                                        Row(children: [
+                                          Expanded(child: CustomTextFieldWidget(formProduct: true, border: true, controller: resProvider.weightController, textInputType: TextInputType.number, textInputAction: TextInputAction.done, hintText: getTranslated('seller_product_weight', context)!)),
+                                          const SizedBox(width: Dimensions.paddingSizeSmall),
+                                          Expanded(child: DropdownDecoratorWidget(
+                                            title: 'seller_product_weight_unit',
+                                            child: DropdownButton<String>(
+                                              value: resProvider.weightUnit,
+                                              isExpanded: true,
+                                              underline: const SizedBox(),
+                                              items: const ['g', 'kg'].map((value) => DropdownMenuItem<String>(value: value, child: Text(value))).toList(),
+                                              onChanged: (value) {
+                                                if (value != null) resProvider.setWeightUnit(value);
+                                              },
+                                            ),
+                                          )),
+                                        ]),
+                                      ]),
+                                    ) : const SizedBox(),
+
 
                                     Container(padding: const EdgeInsets.fromLTRB(Dimensions.paddingSizeMedium, 0, Dimensions.paddingSizeMedium, 0),
                                       child: Column(children: [
@@ -928,6 +1033,22 @@ class AddProductScreenState extends State<AddProductScreen> with TickerProviderS
                               title: getTranslated('additional_product_images', context)!,
                               subTitle: getTranslated('upload_any_additional_images_for', context)!,
                               childrens: <Widget>[
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault, vertical: Dimensions.paddingSizeSmall),
+                                  child: Consumer<AddProductImageController>(builder: (context, imageController, _) {
+                                    final existingCount = _update
+                                        ? (widget.product?.imagesFullUrl?.where((image) => image.path?.isNotEmpty ?? false).length ?? 0)
+                                        : 0;
+                                    final colorCount = imageController.imagesWithColor.where((image) => image.image != null).length;
+                                    final count = existingCount + imageController.withoutColor.length + colorCount;
+                                    final isComplete = count >= 5;
+                                    return Row(children: [
+                                      Icon(isComplete ? Icons.check_circle_outline : Icons.photo_library_outlined, color: isComplete ? Colors.green : Theme.of(context).colorScheme.error),
+                                      const SizedBox(width: Dimensions.paddingSizeSmall),
+                                      Text('${getTranslated('seller_product_images_count', context)}: $count/5', style: robotoMedium.copyWith(color: isComplete ? Colors.green : Theme.of(context).colorScheme.error)),
+                                    ]);
+                                  }),
+                                ),
                                 if(_update)
                                   Padding(
                                     padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault, vertical: Dimensions.paddingSizeSmall),

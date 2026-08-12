@@ -1,13 +1,10 @@
 import 'dart:io';
-import 'package:country_code_picker/country_code_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import 'package:sixvalley_vendor_app/features/auth/widgets/code_picker_widget.dart';
 import 'package:sixvalley_vendor_app/features/auth/widgets/pass_view.dart';
 import 'package:sixvalley_vendor_app/features/profile/domain/models/profile_body.dart';
 import 'package:sixvalley_vendor_app/features/profile/domain/models/profile_info.dart';
-import 'package:sixvalley_vendor_app/helper/country_code_helper.dart';
 import 'package:sixvalley_vendor_app/helper/image_size_checker.dart';
 import 'package:sixvalley_vendor_app/localization/language_constrants.dart';
 import 'package:sixvalley_vendor_app/features/auth/controllers/auth_controller.dart';
@@ -39,11 +36,18 @@ class ProfileScreenState extends State<ProfileScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
-  String? _countryDialCode = '+880';
+  static const String _egyptDialCode = '+20';
 
   File? file;
   final picker = ImagePicker();
   final GlobalKey<ScaffoldMessengerState> _scaffoldKey = GlobalKey<ScaffoldMessengerState>();
+
+  String _localEgyptianMobile(String value) {
+    var digits = value.replaceAll(RegExp(r'\D'), '');
+    if (digits.startsWith('20')) digits = digits.substring(2);
+    if (digits.startsWith('0')) digits = digits.substring(1);
+    return digits;
+  }
 
   void _choose() async {
     final pickedFile = await ImageValidationHelper.validateAndPickImage(
@@ -60,14 +64,14 @@ class ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _updateUserAccount() async {
     String firstName = _firstNameController.text.trim();
-    String lastName = _firstNameController.text.trim();
+    String lastName = _lastNameController.text.trim();
     String phoneNumber = _phoneController.text.trim();
     String password0 = _passwordController.text.trim();
     String confirmPassword = _confirmPasswordController.text.trim();
 
     if(Provider.of<ProfileController>(context, listen: false).userInfoModel!.fName == _firstNameController.text
         && Provider.of<ProfileController>(context, listen: false).userInfoModel!.lName == _lastNameController.text
-        && Provider.of<ProfileController>(context, listen: false).userInfoModel!.phone == _phoneController.text && file == null
+        && _localEgyptianMobile(Provider.of<ProfileController>(context, listen: false).userInfoModel!.phone ?? '') == _localEgyptianMobile(_phoneController.text) && file == null
     && _passwordController.text.isEmpty && _confirmPasswordController.text.isEmpty) {
       showCustomSnackBarWidget(getTranslated('change_something_to_update', context), context, sanckBarType: SnackBarType.warning);
 
@@ -79,6 +83,9 @@ class ProfileScreenState extends State<ProfileScreen> {
 
     }else if (phoneNumber.isEmpty) {
       showCustomSnackBarWidget(getTranslated('enter_phone_number', context), context, sanckBarType: SnackBarType.warning);
+    }
+    else if (!RegExp(r'^1[0-25][0-9]{8}$').hasMatch(_localEgyptianMobile(phoneNumber))) {
+      showCustomSnackBarWidget(getTranslated('input_valid_phone_number', context), context, sanckBarType: SnackBarType.warning);
     }
 
     else if((password0.isNotEmpty && password0.length < 6)
@@ -98,7 +105,7 @@ class ProfileScreenState extends State<ProfileScreen> {
       ProfileInfoModel updateUserInfoModel = Provider.of<ProfileController>(context, listen: false).userInfoModel!;
       updateUserInfoModel.fName = _firstNameController.text;
       updateUserInfoModel.lName = _lastNameController.text;
-      updateUserInfoModel.phone = _countryDialCode! + _phoneController.text;
+      updateUserInfoModel.phone = '$_egyptDialCode${_localEgyptianMobile(_phoneController.text)}';
       String password = _passwordController.text;
 
       ProfileInfoModel bank = Provider.of<BankInfoController>(context, listen: false).bankInfo!;
@@ -117,6 +124,7 @@ class ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     Provider.of<AuthController>(context, listen: false).validPassCheck('', isUpdate: false);
+    Provider.of<ProfileController>(context, listen: false).setCountryDialCode(_egyptDialCode);
   }
 
   @override
@@ -133,11 +141,7 @@ class ProfileScreenState extends State<ProfileScreen> {
               if(_firstNameController.text.isEmpty || _lastNameController.text.isEmpty) {
                 _firstNameController.text = profile.userInfoModel!.fName!;
                 _lastNameController.text = profile.userInfoModel!.lName!;
-                String countryCode = CountryCodeHelper.getCountryCode(profile.userInfoModel!.phone!)!;
-                _countryDialCode = countryCode;
-                profile.setCountryDialCode(_countryDialCode);
-                String phoneNumberOnly = CountryCodeHelper.extractPhoneNumber(countryCode, profile.userInfoModel!.phone!);
-                _phoneController.text = phoneNumberOnly;
+                _phoneController.text = _localEgyptianMobile(profile.userInfoModel!.phone ?? '');
               }
               return SingleChildScrollView(
                 child: Column(
@@ -227,34 +231,28 @@ class ProfileScreenState extends State<ProfileScreen> {
 
                           const SizedBox(height: Dimensions.paddingSizeDefault),
 
-                          Row(
-                            children: [
-                              CodePickerWidget(
-                                onChanged: (CountryCode countryCode) {
-                                  _countryDialCode = countryCode.dialCode;
-                                  profile.setCountryDialCode(_countryDialCode);
-                                },
-                                initialSelection: profile.countryDialCode,
-                                favorite: [profile.countryDialCode!],
-                                showDropDownButton: true,
-                                padding: EdgeInsets.zero,
-                                showFlagMain: true,
-                                textStyle: TextStyle(color: Theme.of(context).textTheme.displayLarge!.color),
+                          Row(children: [
+                            Container(
+                              height: 56,
+                              alignment: Alignment.center,
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Theme.of(context).hintColor),
+                                borderRadius: BorderRadius.circular(6),
                               ),
-
-                              Expanded(
-                                child: CustomTextFieldWidget(
-                                  border: true,
-                                  textInputType: TextInputType.phone,
-                                  focusNode: _phoneFocus,
-                                  nextNode: _passwordFocus,
-                                  hintText: profile.userInfoModel!.phone ?? "",
-                                  controller: _phoneController,
-                                  isPhoneNumber: true,
-                                ),
-                              ),
-                            ],
-                          ),
+                              child: const Text(_egyptDialCode),
+                            ),
+                            const SizedBox(width: Dimensions.paddingSizeSmall),
+                            Expanded(child: CustomTextFieldWidget(
+                              border: true,
+                              textInputType: TextInputType.phone,
+                              focusNode: _phoneFocus,
+                              nextNode: _passwordFocus,
+                              hintText: getTranslated('mobile_hint', context),
+                              controller: _phoneController,
+                              isPhoneNumber: true,
+                            )),
+                          ]),
 
                           const SizedBox(height: Dimensions.paddingSizeDefault),
                           CustomTextFieldWidget(

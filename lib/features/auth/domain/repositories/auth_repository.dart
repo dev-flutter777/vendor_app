@@ -192,19 +192,15 @@ class AuthRepository implements AuthRepositoryInterface{
       request.files.add(part);
     }
 
-    Map<String, String> fields = {};
-    fields.addAll(<String, String>{
-      'f_name': registerModel.fName!,
-      'l_name': registerModel.lName!,
+    final fields = <String, String>{
       'phone': registerModel.phone!,
       'email': registerModel.email!,
       'password': registerModel.password!,
       'confirm_password': registerModel.confirmPassword!,
-      'shop_name': registerModel.shopName!,
-      'shop_address': registerModel.shopAddress!,
-      'tax_identification_number': registerModel.businessTin!,
-      'tin_expire_date': registerModel.tinExpireDate ?? ''
-    });
+    };
+    for (var index = 0; index < registerModel.policyVersionIds.length; index++) {
+      fields['policy_version_ids[$index]'] = registerModel.policyVersionIds[index].toString();
+    }
 
     request.fields.addAll(fields);
     if (kDebugMode) {
@@ -224,6 +220,92 @@ class AuthRepository implements AuthRepositoryInterface{
     } catch (e) {
       return ApiResponse.withError(ApiErrorHandler.getMessage(e));
 
+    }
+  }
+
+  @override
+  Future<ApiResponse> requiredRegistrationPolicies() async {
+    try {
+      return ApiResponse.withSuccess(await dioClient!.get(AppConstants.registrationPoliciesUri));
+    } catch (e) {
+      return ApiResponse.withError(ApiErrorHandler.getMessage(e));
+    }
+  }
+
+  @override
+  Future<ApiResponse> acceptRegistrationPolicies(String registrationReference, List<int> policyVersionIds) async {
+    try {
+      return ApiResponse.withSuccess(await dioClient!.post(AppConstants.registrationPolicyAcceptUri, data: {
+        'registration_reference': registrationReference,
+        'policy_version_ids': policyVersionIds,
+      }));
+    } catch (e) {
+      return ApiResponse.withError(ApiErrorHandler.getMessage(e));
+    }
+  }
+
+  @override
+  Future<ApiResponse> sendRegistrationOtp(String registrationReference) async {
+    try {
+      return ApiResponse.withSuccess(await dioClient!.post(AppConstants.registrationOtpSendUri, data: {'registration_reference': registrationReference}));
+    } catch (e) {
+      return ApiResponse.withError(ApiErrorHandler.getMessage(e));
+    }
+  }
+
+  @override
+  Future<ApiResponse> verifyRegistrationOtp(String registrationReference, String otp) async {
+    try {
+      return ApiResponse.withSuccess(await dioClient!.post(AppConstants.registrationOtpVerifyUri, data: {
+        'registration_reference': registrationReference,
+        'otp': otp,
+      }));
+    } catch (e) {
+      return ApiResponse.withError(ApiErrorHandler.getMessage(e));
+    }
+  }
+
+  @override
+  Future<void> saveRegistrationReference(String value) async {
+    await sharedPreferences!.setString(AppConstants.registrationReference, value);
+  }
+
+  @override
+  String getRegistrationReference() => sharedPreferences!.getString(AppConstants.registrationReference) ?? '';
+
+  @override
+  Future<ApiResponse> activationStatus(String registrationReference) async {
+    try {
+      return ApiResponse.withSuccess(await dioClient!.get(AppConstants.registrationActivationStatusUri, queryParameters: {'registration_reference': registrationReference}));
+    } catch (e) {
+      return ApiResponse.withError(ApiErrorHandler.getMessage(e));
+    }
+  }
+
+  @override
+  Future<ApiResponse> openActivationTicket(String registrationReference) async {
+    try {
+      return ApiResponse.withSuccess(await dioClient!.post(AppConstants.registrationActivationTicketUri, data: {'registration_reference': registrationReference}));
+    } catch (e) {
+      return ApiResponse.withError(ApiErrorHandler.getMessage(e));
+    }
+  }
+
+  @override
+  Future<ApiResponse> activationTicketMessages(String registrationReference, {int? ticketId}) async {
+    try {
+      return ApiResponse.withSuccess(await dioClient!.get(AppConstants.registrationActivationTicketMessagesUri, queryParameters: {'registration_reference': registrationReference, if (ticketId != null) 'ticket_id': ticketId}));
+    } catch (e) {
+      return ApiResponse.withError(ApiErrorHandler.getMessage(e));
+    }
+  }
+
+  @override
+  Future<ApiResponse> sendActivationTicketMessage(String registrationReference, String body, {int? ticketId}) async {
+    try {
+      return ApiResponse.withSuccess(await dioClient!.post(AppConstants.registrationActivationTicketMessagesUri, data: {'registration_reference': registrationReference, 'body': body, if (ticketId != null) 'ticket_id': ticketId}));
+    } catch (e) {
+      return ApiResponse.withError(ApiErrorHandler.getMessage(e));
     }
   }
 

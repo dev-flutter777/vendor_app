@@ -108,6 +108,16 @@ class AddProductController extends ChangeNotifier {
   TextEditingController shippingCostController = TextEditingController();
   TextEditingController minimumOrderQuantityController = TextEditingController();
   TextEditingController youtubeLinkController = TextEditingController();
+  final TextEditingController piecesPerUnitController = TextEditingController();
+  final TextEditingController lengthController = TextEditingController();
+  final TextEditingController widthController = TextEditingController();
+  final TextEditingController heightController = TextEditingController();
+  final TextEditingController weightController = TextEditingController();
+  final TextEditingController productionDateController = TextEditingController();
+  final TextEditingController expiryDateController = TextEditingController();
+  String saleUnitType = 'piece';
+  String dimensionUnit = 'cm';
+  String weightUnit = 'kg';
 
 
   @override
@@ -117,6 +127,13 @@ class AddProductController extends ChangeNotifier {
     shippingCostController.dispose();
     minimumOrderQuantityController.dispose();
     youtubeLinkController.dispose();
+    piecesPerUnitController.dispose();
+    lengthController.dispose();
+    widthController.dispose();
+    heightController.dispose();
+    weightController.dispose();
+    productionDateController.dispose();
+    expiryDateController.dispose();
     super.dispose();
   }
 
@@ -329,7 +346,13 @@ class AddProductController extends ChangeNotifier {
 
      _productCode.clear();
       Navigator.pushAndRemoveUntil(Get.context!, MaterialPageRoute(builder: (_) => const ProductListMenuScreen(fromNotification: true)), (route) => false);
-      showCustomSnackBarWidget(isAdd ? getTranslated('product_added_successfully', Get.context!): getTranslated('product_updated_successfully', Get.context!),Get.context!, isError: false);
+      showCustomSnackBarWidget(
+        isAdd
+            ? getTranslated('seller_product_uploaded_under_review', Get.context!)
+            : getTranslated('product_updated_successfully', Get.context!),
+        Get.context!,
+        isError: false,
+      );
        titleControllerList.clear();
       descriptionControllerList.clear();
       Provider.of<AddProductImageController>(Get.context!, listen: false).removeProductImage();
@@ -339,8 +362,8 @@ class AddProductController extends ChangeNotifier {
     }else {
       Provider.of<AddProductImageController>(Get.context!,listen: false).emptyWithColorImage();
       _isLoading = false;
+      // Keep the backend's specific entitlement reason visible to the seller.
       ApiChecker.checkApi( response);
-      showCustomSnackBarWidget(getTranslated('product_add_failed', Get.context!), Get.context!, sanckBarType: SnackBarType.error);
     }
     _isLoading = false;
     notifyListeners();
@@ -555,9 +578,22 @@ class AddProductController extends ChangeNotifier {
       return false;
     }
 
-    // 2. Check Description
+    // 2. Check Description and seller identity/contact policy before upload.
     if(descriptionControllerList.isNotEmpty && descriptionControllerList[0].text.isEmpty) {
       showCustomSnackBarWidget(getTranslated('please_input_all_des', context), context, sanckBarType: SnackBarType.warning);
+      return false;
+    }
+
+    final restrictedText = <String>[
+      ...titleControllerList.map((controller) => controller.text),
+      ...descriptionControllerList.map((controller) => controller.text),
+    ].join(' ');
+    if (_containsRestrictedSellerIdentityData(restrictedText)) {
+      showCustomSnackBarWidget(
+        getTranslated('seller_product_description_policy_warning', context),
+        context,
+        sanckBarType: SnackBarType.warning,
+      );
       return false;
     }
 
@@ -594,20 +630,50 @@ class AddProductController extends ChangeNotifier {
       return false;
     }
 
-    // 7. Check Product Images
+    // 7. Require five product images. The thumbnail is intentionally not part
+    // of this count because the API stores it separately from product images.
     bool hasExistingImages = isUpdate && (existingProduct.imagesFullUrl != null && existingProduct.imagesFullUrl!.isNotEmpty);
-    // Optional: Add logic to check if existing images are valid (not null path) if needed
+    final existingImageCount = hasExistingImages
+        ? existingProduct.imagesFullUrl!.where((image) => image.path?.isNotEmpty ?? false).length
+        : 0;
+    final newColorImageCount = imageController.imagesWithColor.where((image) => image.image != null).length;
+    final productImageCount = isUpdate
+        ? existingImageCount + imageController.withoutColor.length + newColorImageCount
+        : imageController.withoutColor.length + newColorImageCount;
+    if (productImageCount < 5) {
+      showCustomSnackBarWidget(
+        '${getTranslated('seller_product_minimum_images_required', context)} ($productImageCount/5)',
+        context,
+        sanckBarType: SnackBarType.warning,
+      );
+      return false;
+    }
 
-    int newImageCount = imageController.imagesWithColor.length + imageController.withoutColor.length;
+    if ((saleUnitType == 'package' || saleUnitType == 'box') &&
+        (int.tryParse(piecesPerUnitController.text.trim()) ?? 0) < 1) {
+      showCustomSnackBarWidget(getTranslated('seller_product_pieces_per_unit_required', context), context, sanckBarType: SnackBarType.warning);
+      return false;
+    }
 
+    final productionDate = DateTime.tryParse(productionDateController.text.trim());
+    final expiryDate = DateTime.tryParse(expiryDateController.text.trim());
+    final today = DateTime.now();
+    final todayOnly = DateTime(today.year, today.month, today.day);
+    if (productionDate == null || expiryDate == null) {
+      showCustomSnackBarWidget(getTranslated('product_dates_are_required', context), context, sanckBarType: SnackBarType.warning);
+      return false;
+    }
+    if (expiryDate.isBefore(productionDate) || !expiryDate.isAfter(todayOnly)) {
+      showCustomSnackBarWidget(getTranslated('product_expiry_date_is_invalid', context), context, sanckBarType: SnackBarType.warning);
+      return false;
+    }
 
-    // if (!isUpdate && newImageCount == 0) {
-    //   showCustomSnackBarWidget(getTranslated('upload_product_image', context), context, sanckBarType: SnackBarType.warning);
-    //   return false;
-    // } else if (isUpdate && newImageCount == 0 && !hasExistingImages) {
-    //   showCustomSnackBarWidget(getTranslated('upload_product_image', context), context, sanckBarType: SnackBarType.warning);
-    //   return false;
-    // } else
+    final optionalMeasurements = [lengthController.text, widthController.text, heightController.text, weightController.text]
+        .where((value) => value.trim().isNotEmpty);
+    if (optionalMeasurements.any((value) => (double.tryParse(value.trim()) ?? 0) <= 0)) {
+      showCustomSnackBarWidget(getTranslated('seller_product_measurement_invalid', context), context, sanckBarType: SnackBarType.warning);
+      return false;
+    }
 
     if(youtubeLink != null && youtubeLink.trim().isNotEmpty && !youtubeLink.contains('youtube.com/embed/')) {
       showCustomSnackBarWidget(getTranslated('provide_embedded_link', context), context, sanckBarType: SnackBarType.warning);
@@ -615,6 +681,44 @@ class AddProductController extends ChangeNotifier {
     }
 
     return true;
+  }
+
+  bool _containsRestrictedSellerIdentityData(String value) {
+    final normalized = value.trim();
+    if (normalized.isEmpty) return false;
+
+    final hasPhone = RegExp(r'(?:\+?20|0?1[0125])(?:[\s-]?\d){8,10}|(?:٠١|01)[٠-٩0-9\s-]{8,12}').hasMatch(normalized);
+    final hasDirectContact = RegExp(r'\b(?:https?://|www\.|[\w.+-]+@[\w-]+\.[\w.-]+|whatsapp|telegram|contact\s+us)\b|(?:واتساب|تليجرام|تواصل\s*معنا|اتصل\s*بنا|العنوان|شارع)', caseSensitive: false).hasMatch(normalized);
+    return hasPhone || hasDirectContact;
+  }
+
+  void initializeProductSpecifications(Product? product) {
+    saleUnitType = product?.saleUnitType ?? 'piece';
+    piecesPerUnitController.text = product?.piecesPerUnit?.toString() ?? '';
+    lengthController.text = product?.length?.toString() ?? '';
+    widthController.text = product?.width?.toString() ?? '';
+    heightController.text = product?.height?.toString() ?? '';
+    weightController.text = product?.weight?.toString() ?? '';
+    dimensionUnit = product?.dimensionUnit ?? 'cm';
+    weightUnit = product?.weightUnit ?? 'kg';
+    productionDateController.text = product?.productionDate ?? '';
+    expiryDateController.text = product?.expiryDate ?? '';
+  }
+
+  void setSaleUnitType(String value) {
+    saleUnitType = value;
+    if (value == 'piece') piecesPerUnitController.clear();
+    notifyListeners();
+  }
+
+  void setDimensionUnit(String value) {
+    dimensionUnit = value;
+    notifyListeners();
+  }
+
+  void setWeightUnit(String value) {
+    weightUnit = value;
+    notifyListeners();
   }
 
 
@@ -733,10 +837,7 @@ class AddProductController extends ChangeNotifier {
       showCustomSnackBarWidget(getTranslated('enter_quantity_for_every_variant', context), context, sanckBarType: SnackBarType.warning);
       return false;
     }
-    else if (productTypeIndex == 0 && shippingCost.isEmpty) {
-      showCustomSnackBarWidget(getTranslated('enter_shipping_cost', context), context, sanckBarType: SnackBarType.warning);
-      return false;
-    }
+    // Shipping validation is intentionally omitted because admin owns delivery pricing.
     else if((isUpdate || !isUpdate) && productTypeIndex == 1 && digitalProductController.digitalProductTypeIndex == 1 && isFileEmpty) {
       showCustomSnackBarWidget(getTranslated('digital_product_file_empty', context), context, sanckBarType: SnackBarType.warning);
       return false;

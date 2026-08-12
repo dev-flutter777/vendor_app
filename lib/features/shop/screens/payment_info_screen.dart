@@ -257,6 +257,20 @@ class PaymentInfoWidget extends StatelessWidget {
                             ),
                             child: Text(getTranslated('default', context) ?? '', style: robotoMedium.copyWith(color: Theme.of(context).colorScheme.onTertiaryContainer, fontSize: Dimensions.fontSizeDefault)),
                           ),
+
+                        const SizedBox(width: Dimensions.paddingSizeExtraSmall),
+                        Builder(builder: (context) {
+                          final status = shopController.paymentInformationModel?.data?[index].approvalStatus ?? 'pending';
+                          final statusColor = status == 'approved' ? Colors.green : (status == 'rejected' ? Colors.red : Colors.orange);
+                          return Container(
+                            padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeExtraSmall, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: statusColor.withValues(alpha: 0.12),
+                              borderRadius: const BorderRadius.all(Radius.circular(Dimensions.radiusSmall)),
+                            ),
+                            child: Text(getTranslated(status, context) ?? status, style: robotoMedium.copyWith(color: statusColor, fontSize: Dimensions.fontSizeSmall)),
+                          );
+                        }),
                       ],
                     ),
                   ),
@@ -583,5 +597,4 @@ class PaymentMethodListShimmer extends StatelessWidget {
     );
   }
 }
-
 

@@ -1,10 +1,8 @@
-import 'package:country_code_picker/country_code_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
-import 'package:sixvalley_vendor_app/features/auth/widgets/code_picker_widget.dart';
 import 'package:sixvalley_vendor_app/features/splash/controllers/splash_controller.dart';
-import 'package:sixvalley_vendor_app/helper/country_code_helper.dart';
+import 'package:sixvalley_vendor_app/helper/egypt_location_helper.dart';
 import 'package:sixvalley_vendor_app/localization/language_constrants.dart';
 import 'package:sixvalley_vendor_app/features/order/controllers/location_controller.dart';
 import 'package:sixvalley_vendor_app/features/order/controllers/order_controller.dart';
@@ -50,18 +48,23 @@ class EditAddressScreenState extends State<EditAddressScreen> {
   bool _updateAddress = true;
   CameraPosition? _cameraPosition;
   GoogleMapController? _controller;
-  String? _countryDialCode = "+880";
+  static const String _countryDialCode = '+20';
   String? _phoneNumberOnly;
+  late final LatLng _initialPosition;
 
   @override
   void initState() {
     super.initState();
 
-    if(widget.number != null){
-      String countryCode = CountryCodeHelper.getCountryCode(widget.number)!;
-      _countryDialCode = countryCode;
-      _phoneNumberOnly = CountryCodeHelper.extractPhoneNumber(countryCode, widget.number!);
-    }
+    final storedPhone = (widget.number ?? '').replaceAll(RegExp(r'\D'), '');
+    _phoneNumberOnly = storedPhone.startsWith('20')
+        ? storedPhone.substring(2)
+        : (storedPhone.startsWith('0') ? storedPhone.substring(1) : storedPhone);
+
+    _initialPosition = EgyptLocationHelper.normalize(LatLng(
+      double.tryParse(widget.lat ?? '') ?? EgyptLocationHelper.center.latitude,
+      double.tryParse(widget.lng ?? '') ?? EgyptLocationHelper.center.longitude,
+    ));
 
 
     Provider.of<LocationController>(context, listen: false).locationTextEditingController.text = widget.address??'';
@@ -70,7 +73,7 @@ class EditAddressScreenState extends State<EditAddressScreen> {
     _contactPersonNameController.text = widget.name??'';
     _contactPersonNumberController.text = _phoneNumberOnly??'';
     _contactPersonEmailController.text = widget.email??'';
-    Provider.of<LocationController>(context, listen: false).updateInitialPosition(LatLng(double.parse(widget.lat.toString()), double.parse(widget.lng.toString())));
+    Provider.of<LocationController>(context, listen: false).updateInitialPosition(_initialPosition);
   }
 
   @override
@@ -91,7 +94,8 @@ class EditAddressScreenState extends State<EditAddressScreen> {
                       child: ClipRRect(borderRadius: BorderRadius.circular(Dimensions.paddingSizeSmall),
                         child: Stack(clipBehavior: Clip.none, children: [
                           GoogleMap(mapType: MapType.normal,
-                            initialCameraPosition:  CameraPosition(target: LatLng(double.parse(widget.lat.toString()), double.parse(widget.lng.toString())), zoom: 16),
+                            cameraTargetBounds: CameraTargetBounds(EgyptLocationHelper.bounds),
+                            initialCameraPosition: CameraPosition(target: _initialPosition, zoom: 16),
                             onTap: (latLng) {
                              Navigator.of(context).push(MaterialPageRoute(builder: (BuildContext context) => SelectLocationScreen(googleMapController: _controller)));
                             },
@@ -101,7 +105,7 @@ class EditAddressScreenState extends State<EditAddressScreen> {
                             mapToolbarEnabled: false,
                             onCameraMove: ((position) => _cameraPosition = position),
                             onMapCreated: (GoogleMapController controller) {
-
+                              _controller = controller;
                             },
                             onCameraIdle: () {
                               if(_updateAddress) {
@@ -197,16 +201,18 @@ class EditAddressScreenState extends State<EditAddressScreen> {
 
                     Row(
                       children: [
-                        CodePickerWidget(
-                          onChanged: (CountryCode countryCode) {
-                           _countryDialCode = countryCode.dialCode;
-                          },
-                          initialSelection: _countryDialCode,
-                          favorite: const ['+880'],
-                          showDropDownButton: true,
-                          padding: EdgeInsets.zero,
-                          showFlagMain: true,
-                          textStyle: TextStyle(color: Theme.of(context).textTheme.displayLarge!.color),
+                        Container(
+                          height: 48,
+                          alignment: Alignment.center,
+                          padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Theme.of(context).hintColor.withValues(alpha: .35)),
+                            borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall),
+                          ),
+                          child: Text(_countryDialCode, style: TextStyle(
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
+                            fontWeight: FontWeight.w600,
+                          )),
                         ),
 
                         Expanded(
@@ -231,15 +237,30 @@ class EditAddressScreenState extends State<EditAddressScreen> {
                         child: orderProvider.isAddressLoading ? const Center(child: CircularProgressIndicator()) : CustomButtonWidget(
                           btnTxt: getTranslated('update_address', context),
                           onTap: () {
+                            final selectedLocation = LatLng(
+                              locationProvider.pickPosition.latitude,
+                              locationProvider.pickPosition.longitude,
+                            );
+                            if (!EgyptLocationHelper.contains(selectedLocation)) {
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                content: Text(getTranslated('select_address_inside_egypt', context) ?? ''),
+                              ));
+                              return;
+                            }
                             String contactPersonName = _contactPersonNameController.text.trim();
-                            String phone = (_countryDialCode ?? '') + _contactPersonNumberController.text.trim();
+                            var localPhone = _contactPersonNumberController.text.replaceAll(RegExp(r'\D'), '');
+                            if (localPhone.startsWith('20')) localPhone = localPhone.substring(2);
+                            if (localPhone.startsWith('0')) localPhone = localPhone.substring(1);
+                            String phone = '$_countryDialCode$localPhone';
                             String email = _contactPersonEmailController.text.trim();
                             String city = _cityController.text.trim();
                             String zip = _zipCodeController.text.trim();
                             String addressType = widget.isBilling! ? 'billing':'shipping';
                             String address =  locationProvider.locationTextEditingController.text.trim();
                             orderProvider.editShippingAndBillingAddress(orderID: widget.orderId, addressType: addressType, contactPersonName: contactPersonName,
-                            phone: phone, city: city, zip: zip, address:address, email: email, latitude: widget.lat, longitude: widget.lng);
+                            phone: phone, city: city, zip: zip, address:address, email: email,
+                            latitude: locationProvider.pickPosition.latitude.toString(),
+                            longitude: locationProvider.pickPosition.longitude.toString());
                           },
                         )
                       )

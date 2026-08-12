@@ -38,6 +38,10 @@ class PaymentInfoData {
   Map<String, dynamic>? methodInfo;
   bool? isActive;
   bool? isDefault;
+  String? methodType;
+  String? approvalStatus;
+  String? approvalReason;
+  String? reviewedAt;
   String? createdAt;
   String? updatedAt;
   WithdrawMethod? withdrawMethod;
@@ -50,6 +54,10 @@ class PaymentInfoData {
         this.methodInfo,
         this.isActive,
         this.isDefault,
+        this.methodType,
+        this.approvalStatus,
+        this.approvalReason,
+        this.reviewedAt,
         this.createdAt,
         this.updatedAt,
         this.withdrawMethod});
@@ -64,6 +72,10 @@ class PaymentInfoData {
       : null;
     isActive = json['is_active'];
     isDefault = json['is_default'];
+    methodType = json['method_type'];
+    approvalStatus = json['approval_status'];
+    approvalReason = json['approval_reason'];
+    reviewedAt = json['reviewed_at'];
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
     withdrawMethod = json['withdraw_method'] != null
@@ -82,6 +94,10 @@ class PaymentInfoData {
     }
     data['is_active'] = isActive;
     data['is_default'] = isDefault;
+    data['method_type'] = methodType;
+    data['approval_status'] = approvalStatus;
+    data['approval_reason'] = approvalReason;
+    data['reviewed_at'] = reviewedAt;
     data['created_at'] = createdAt;
     data['updated_at'] = updatedAt;
     if (withdrawMethod != null) {

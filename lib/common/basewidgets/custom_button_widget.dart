@@ -47,14 +47,16 @@ class CustomButtonWidget extends StatelessWidget {
       onTap: onTap as void Function()?,
       child: Container( height: buttonHeight, alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: isColor? backgroundColor : backgroundColor ?? Theme.of(context).primaryColor,
+          color: onTap == null
+              ? Theme.of(context).disabledColor
+              : (isColor ? backgroundColor : backgroundColor ?? Theme.of(context).primaryColor),
           borderRadius: BorderRadius.circular(borderRadius != null? borderRadius! : Dimensions.radiusDefault),
           border: Border.all(color: borderColor ?? Theme.of(context).cardColor)
         ),
         child: Text(btnTxt!,
             style: textStyle ?? robotoBold.copyWith(
               fontSize: textSize,
-              color: fontColor ?? Colors.white,
+              color: fontColor ?? Theme.of(context).colorScheme.onPrimary,
             )),
       ),
     );

@@ -16,6 +16,7 @@ abstract class ProductRepositoryInterface implements RepositoryInterface{
   Future<ApiResponse> getStockLimitStatus();
   Future<ApiResponse> getSearchedPosProductList(String search, List <String> ids);
   Future<ApiResponse> getStockLimitedProductList(int offset, String languageCode );
+  Future<ApiResponse> getStockViolations(String languageCode);
   Future<ApiResponse> getMostPopularProductList(int offset, String languageCode );
   Future<ApiResponse> getTopSellingProductList(int offset, String languageCode );
   bool isShowCookies();

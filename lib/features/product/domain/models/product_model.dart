@@ -22,6 +22,7 @@ class ProductModel {
   String? search;
   String? status;
   String? isApproved;
+  Map<String, int>? reviewStatusCounts;
   String? filterSortBy;
   String? sorting;
   List<Product>? _products;
@@ -77,6 +78,12 @@ class ProductModel {
 
     if(json['is_approved'] != null) {
       isApproved = json['is_approved'];
+    }
+
+    if (json['review_status_counts'] is Map) {
+      reviewStatusCounts = Map<String, int>.fromEntries(
+        (json['review_status_counts'] as Map).entries.map((entry) => MapEntry(entry.key.toString(), int.tryParse('${entry.value}') ?? 0)),
+      );
     }
 
     if(json['sorting'] != null) {
@@ -176,6 +183,18 @@ class Product {
   String? updatedAt;
   int? status;
   int? requestStatus;
+  String? sellerReviewStatus;
+  String? sellerReviewReason;
+  String? saleUnitType;
+  int? piecesPerUnit;
+  double? length;
+  double? width;
+  double? height;
+  String? dimensionUnit;
+  double? weight;
+  String? weightUnit;
+  String? productionDate;
+  String? expiryDate;
   List<Rating>? rating;
   String? metaTitle;
   String? metaDescription;
@@ -245,6 +264,18 @@ class Product {
         this.updatedAt,
         this.status,
         this.requestStatus,
+        this.sellerReviewStatus,
+        this.sellerReviewReason,
+        this.saleUnitType,
+        this.piecesPerUnit,
+        this.length,
+        this.width,
+        this.height,
+        this.dimensionUnit,
+        this.weight,
+        this.weightUnit,
+        this.productionDate,
+        this.expiryDate,
         int? featuredStatus,
         this.rating,
         this.metaTitle,
@@ -383,6 +414,18 @@ class Product {
       }
     }
     deniedNote = json['denied_note'];
+    sellerReviewStatus = json['seller_review_status'];
+    sellerReviewReason = json['seller_review_reason'];
+    saleUnitType = json['sale_unit_type'];
+    piecesPerUnit = int.tryParse(json['pieces_per_unit']?.toString() ?? '');
+    length = double.tryParse(json['length']?.toString() ?? '');
+    width = double.tryParse(json['width']?.toString() ?? '');
+    height = double.tryParse(json['height']?.toString() ?? '');
+    dimensionUnit = json['dimension_unit'];
+    weight = double.tryParse(json['weight']?.toString() ?? '');
+    weightUnit = json['weight_unit'];
+    productionDate = json['production_date'];
+    expiryDate = json['expiry_date'];
 
 
     if (json['rating'] != null) {
@@ -532,6 +575,8 @@ class Product {
       data['category_ids'] = categoryIds!.map((v) => v.toJson()).toList();
     }
     data['unit'] = unit;
+    data['production_date'] = productionDate;
+    data['expiry_date'] = expiryDate;
     data['min_qty'] = minQty;
     // data['images'] = images;
     data['authors'] = authors;
@@ -562,6 +607,16 @@ class Product {
     data['status'] = status;
     data['denied_note'] = deniedNote;
     data['request_status'] = requestStatus;
+    data['seller_review_status'] = sellerReviewStatus;
+    data['seller_review_reason'] = sellerReviewReason;
+    data['sale_unit_type'] = saleUnitType;
+    data['pieces_per_unit'] = piecesPerUnit;
+    data['length'] = length;
+    data['width'] = width;
+    data['height'] = height;
+    data['dimension_unit'] = dimensionUnit;
+    data['weight'] = weight;
+    data['weight_unit'] = weightUnit;
     if (rating != null) {
       data['rating'] = rating!.map((v) => v.toJson()).toList();
     }
@@ -1360,5 +1415,3 @@ class ColorImagesFullUrl {
     return data;
   }
 }
-
-

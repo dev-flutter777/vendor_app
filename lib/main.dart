@@ -42,6 +42,8 @@ import 'package:sixvalley_vendor_app/features/settings/controllers/business_cont
 import 'package:sixvalley_vendor_app/features/pos/controllers/cart_controller.dart';
 import 'package:sixvalley_vendor_app/features/chat/controllers/chat_controller.dart';
 import 'package:sixvalley_vendor_app/features/coupon/controllers/coupon_controller.dart';
+import 'package:sixvalley_vendor_app/features/seller_package/controllers/seller_package_controller.dart';
+import 'package:sixvalley_vendor_app/features/seller_promotion/controllers/seller_promotion_controller.dart';
 import 'package:sixvalley_vendor_app/features/delivery_man/controllers/delivery_man_controller.dart';
 import 'package:sixvalley_vendor_app/features/emergency_contract/controllers/emergency_contact_controller.dart';
 import 'package:sixvalley_vendor_app/features/language/controllers/language_controller.dart';
@@ -146,6 +148,10 @@ Future<void> main() async {
       ChangeNotifierProvider(create: (context) => di.sl<CartController>()),
       ChangeNotifierProvider(create: (context) => di.sl<EmergencyContactController>()),
       ChangeNotifierProvider(create: (context) => di.sl<CouponController>()),
+      // Makes package and insurance state available to the seller package screen.
+      ChangeNotifierProvider(create: (context) => di.sl<SellerPackageController>()),
+      // Provides the premium search and homepage promotion quotas to their seller-only screen.
+      ChangeNotifierProvider(create: (context) => di.sl<SellerPromotionController>()),
       ChangeNotifierProvider(create: (context) => di.sl<LocationController>()),
       ChangeNotifierProvider(create: (context) => di.sl<NotificationController>()),
       ChangeNotifierProvider(create: (context) => di.sl<WalletController>()),

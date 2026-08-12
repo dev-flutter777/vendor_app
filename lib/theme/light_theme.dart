@@ -37,7 +37,7 @@ ThemeData light = ThemeData(
     secondaryContainer: const Color(0xFFF2F2F2),
     surface: const Color(0xFFFFFFFF),
     surfaceTint: const Color(0xFF0087FF),
-    onPrimary: const Color(0xFF67AFFF),
+    onPrimary: Colors.white,
     onSecondary: const Color(0xFFFC9926),
     outline: const Color(0xff5C8FFC), // Info Color / Pending color
   ),

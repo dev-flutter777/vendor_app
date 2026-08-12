@@ -20,7 +20,7 @@ class StatusFilterWidget extends StatefulWidget {
 class _StatusFilterWidgetState extends State<StatusFilterWidget> {
   int _selectedIndex = 0;
 
-  final List<String> _filterList = ['all', 'approved', 'denied', 'new_product'];
+  final List<String> _filterList = ['all', 'submitted', 'under_review', 'approved_published', 'suspended', 'rejected'];
 
   ProductController productController = Provider.of<ProductController>(Get.context!, listen: false);
 
@@ -40,7 +40,7 @@ class _StatusFilterWidgetState extends State<StatusFilterWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Consumer<ProductController>(builder: (context, controller, _) => Container(
       color: Theme.of(context).cardColor,
       height: 40,
       padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
@@ -69,7 +69,7 @@ class _StatusFilterWidgetState extends State<StatusFilterWidget> {
                 ),
                 alignment: Alignment.center,
                 child: Text(
-                  getTranslated(_filterList[index], context)  ?? _filterList[index],
+                  '${getTranslated(_filterList[index], context)  ?? _filterList[index]}${_statusCount(controller, _filterList[index])}',
                   style: isSelected ? robotoBold.copyWith(
                     color: Colors.white,
                     fontSize: Dimensions.fontSizeDefault
@@ -83,6 +83,11 @@ class _StatusFilterWidgetState extends State<StatusFilterWidget> {
           );
         },
       ),
-    );
+    ));
+  }
+
+  String _statusCount(ProductController controller, String status) {
+    if (status == 'all') return ' (${controller.sellerProductModel?.totalSize ?? 0})';
+    return ' (${controller.sellerProductModel?.reviewStatusCounts?[status] ?? 0})';
   }
 }

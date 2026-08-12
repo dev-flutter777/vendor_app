@@ -17,6 +17,16 @@ abstract class AuthServiceInterface {
   String getUserPassword();
   Future<dynamic> clearUserNumberAndPassword();
   Future<dynamic> registration(XFile? profileImage, XFile? shopLogo, XFile? shopBanner, XFile? secondaryBanner, RegisterModel registerModel, XFile? tinCertificate);
+  Future<dynamic> requiredRegistrationPolicies();
+  Future<dynamic> acceptRegistrationPolicies(String registrationReference, List<int> policyVersionIds);
+  Future<dynamic> sendRegistrationOtp(String registrationReference);
+  Future<dynamic> verifyRegistrationOtp(String registrationReference, String otp);
+  Future<dynamic> saveRegistrationReference(String value);
+  String getRegistrationReference();
+  Future<dynamic> activationStatus(String registrationReference);
+  Future<dynamic> openActivationTicket(String registrationReference);
+  Future<dynamic> activationTicketMessages(String registrationReference, {int? ticketId});
+  Future<dynamic> sendActivationTicketMessage(String registrationReference, String body, {int? ticketId});
   Future<dynamic>  firebaseAuthTokenStore({required String userInput, required String token});
   Future<dynamic> firebaseAuthVerify({required String phoneNumber, required String session, required String otp, required bool isForgetPassword});
   Future<dynamic> checkVendorExistPhone({required String phoneNumber});

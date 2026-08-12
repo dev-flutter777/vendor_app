@@ -10,6 +10,7 @@ import 'package:sixvalley_vendor_app/features/product/domain/enums/product_type_
 import 'package:sixvalley_vendor_app/features/product/domain/models/filter_model.dart';
 import 'package:sixvalley_vendor_app/features/product/domain/models/product_model.dart';
 import 'package:sixvalley_vendor_app/features/product/domain/models/srock_limit_model.dart';
+import 'package:sixvalley_vendor_app/features/product/domain/models/seller_stock_violation_model.dart';
 import 'package:sixvalley_vendor_app/features/product/domain/services/product_service_interface.dart';
 import 'package:sixvalley_vendor_app/features/product/domain/models/top_selling_product_model.dart';
 import 'package:sixvalley_vendor_app/features/splash/controllers/splash_controller.dart';
@@ -64,6 +65,11 @@ class ProductController extends ChangeNotifier {
 
   StockLimitStatus? _stockLimitStatus;
   StockLimitStatus? get stockLimitStatus => _stockLimitStatus;
+
+  List<SellerStockViolation>? _stockViolations;
+  List<SellerStockViolation>? get stockViolations => _stockViolations;
+  bool _isStockViolationsLoading = false;
+  bool get isStockViolationsLoading => _isStockViolationsLoading;
 
   bool _showCookies = true;
   bool get showCookies => _showCookies;
@@ -392,6 +398,23 @@ class ProductController extends ChangeNotifier {
     }else {
       ApiChecker.checkApi(response);
     }
+    notifyListeners();
+  }
+
+  Future<void> getStockViolations(String languageCode) async {
+    _isStockViolationsLoading = true;
+    notifyListeners();
+    final response = await productServiceInterface.getStockViolations(languageCode);
+    if (response.response?.statusCode == 200) {
+      final payload = response.response!.data;
+      final items = payload is Map<String, dynamic> ? payload['data'] : null;
+      _stockViolations = items is List
+          ? items.whereType<Map<String, dynamic>>().map(SellerStockViolation.fromJson).toList()
+          : [];
+    } else {
+      ApiChecker.checkApi(response);
+    }
+    _isStockViolationsLoading = false;
     notifyListeners();
   }
 
